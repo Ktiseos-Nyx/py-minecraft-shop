@@ -1,7 +1,7 @@
 # Simple Chest Shop - Py-Spigot Edition
 
 [![Project Status](https://img.shields.io/badge/Project%20Status-In%20Development-yellow.svg)](https://shields.io/)
-[![Minecraft Version](https://img.shields.io/badge/Minecraft-1.20.1-brightgreen.svg)](https://www.minecraft.net/)
+[![Minecraft Version](https://img.shields.io/badge/Minecraft-1.21.3-brightgreen.svg)](https://www.minecraft.net/)
 [![PySpigot](https://img.shields.io/badge/PySpigot-Supported-blue.svg)](https://www.spigotmc.org/wiki/pyspigot-installation/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
