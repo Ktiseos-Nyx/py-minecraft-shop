@@ -1,0 +1,10 @@
+# SimpleChestShop Configuration
+
+settings:
+  enable_shop_creation: true  # Set to false to disable shop creation entirely
+  debug_mode: false          # Enable debug messages in console (for development)
+
+messages:
+  shop_detected: "§a[Shop] System: Shop sign detected and enabled!"
+  no_shop_permission: "§c[Shop] System: You do not have permission to create shops."
+  # Add more messages here as we develop the plugin
