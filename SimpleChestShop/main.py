@@ -4,9 +4,15 @@ import os  # Import the 'os' module for file system operations
 from com.palmergames.bukkit.towny import TownyUniverse # Import TownyUniverse for town checking
 from org.bukkit import Material, Action # Import Material and Action for block and action checking
 
+# Vault Imports (for Vault API)
+from net.milkbowl.vault.economy import Economy
+from org.bukkit.plugin import RegisteredServiceProvider
+
 
 # --- Configuration ---
 config = {}
+vault_enabled = False  # Global flag to track if Vault is enabled
+vault_economy = None   # Global variable to store the Vault Economy service
 
 def load_config():
     global config
@@ -42,6 +48,35 @@ def load_config():
     print("[SimpleChestShop] Configuration loaded.") # Indicate config loading is complete
     if config.get("settings", {}).get("debug_mode", False): # Example of using debug_mode from config
         print("[SimpleChestShop] Debug mode is enabled.")
+
+def get_vault_economy(): # New function to get Vault Economy service
+    """Retrieves the Vault economy service."""
+    global vault_economy, vault_enabled
+    if not config.get("vault", {}).get("enable_vault_integration", True): # Check if Vault integration is enabled in config
+        print("[SimpleChestShop] Vault integration is disabled in config.")
+        vault_enabled = False
+        return None # Vault integration disabled
+
+    if getServer().getPluginManager().getPlugin("Vault") is None: # Check if Vault plugin is installed
+        print("[SimpleChestShop] Vault plugin not found! Disabling Vault integration.")
+        vault_enabled = False
+        return None # Vault not found
+
+    rsp = getServer().getServicesManager().getRegistration(Economy) # Get service registration for Economy
+    if rsp is None: # Check if Economy service is registered
+        print("[SimpleChestShop] Vault Economy service not found! Disabling Vault integration.")
+        vault_enabled = False
+        return None # Economy service not found
+
+    vault_economy = rsp.getProvider() # Get the Economy provider
+    if vault_economy is not None: # Check if provider is valid
+        vault_enabled = True # Vault integration is successfully enabled
+        print("[SimpleChestShop] Vault integration enabled. Economy provider: " + vault_economy.getName()) # Log success
+        return vault_economy
+    else:
+        print("[SimpleChestShop] Failed to get Vault Economy provider! Disabling Vault integration.") # Log failure
+        vault_enabled = False # Vault integration failed
+        return None
 
 # --- Helper Functions ---
 

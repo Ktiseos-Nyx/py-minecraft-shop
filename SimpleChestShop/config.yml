@@ -1,21 +1,34 @@
 # SimpleChestShop Configuration
 
 settings:
-  enable_shop_creation: true  # Set to false to disable shop creation entirely
-  debug_mode: false          # Enable debug messages in console (for development)
+  enable_shop_creation: true
+  debug_mode: false
 
 messages:
   shop_detected: "§a[Shop] System: Shop sign detected and enabled!"
-  no_shop_permission: "§c[Shop] System: You do not have permission to create shops." # Existing message
-  shop_must_be_in_town: "§c[Shop] System: Shops can only be created within town boundaries." # Existing message
+  no_shop_permission: "§c[Shop] System: You do not have permission to create shops."
+  shop_must_be_in_town: "§c[Shop] System: Shops can only be created within town boundaries."
 
 towny:
-  enable_towny_integration: true # Master switch for Towny integration
-  require_town: false         # If true, shops must be created within a town
+  enable_towny_integration: true
+  require_town: false
 
 permissions:
-  enable_permissions: true    # Master switch for permission checks
-  create_shop_permission: "chestshop.create" # Permission node for creating shops
+  enable_permissions: true
+  create_shop_permission: "chestshop.create"
+
+vault:
+  enable_vault_integration: true # Master switch for Vault integration
+
+  # Add more Vault settings here later
+
+  # Add more permissions here as we develop the plugin
+
+  # Add more settings here as we develop the plugin
+
+  # Add more insanity as y'all learn I dont know how to code LMAO. I'm just a writer.
+
+
   # Add more Towny settings here later
 
   # Add more messages here as we develop the plugin
