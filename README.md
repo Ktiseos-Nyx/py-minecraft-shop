@@ -8,9 +8,32 @@
 
 ## Overview
 
-Simple Chest Shop is a streamlined, user-friendly chest shop plugin designed specifically for Paper servers running Minecraft 1.21.3 with Py-Spigot. This project aims to bridge the gap between overly complex shop plugins and the need for a straightforward, intuitive solution, especially for neurodivergent players and server owners who value simplicity. It integrates seamlessly with TownyAdvanced, allowing players to easily create and manage shops within their towns or plots. This plugin supports Geyser, enabling Bedrock Edition players to enjoy the same chest shop experience as their Java Edition counterparts.
+Simple Chest Shop is a streamlined, user-friendly chest shop plugin designed specifically for Paper servers running Minecraft 1.21.3 with Py-Spigot. This project aims to bridge the gap between overly complex shop plugins and the need for a straightforward, intuitive solution, especially for neurodivergent players and server owners who value simplicity. It integrates seamlessly with TownyAdvanced, allowing players to easily create and manage shops within their towns or plots. This plugin supports Geyser, enabling Bedrock Edition players to enjoy the same chest shop experience as their Java Edition counterparts. Inspired by classic Java-based chest shop plugins that may not be compatible with the latest Minecraft versions, Simple Chest Shop offers a fresh take, built from the ground up with accessibility and ease of use in mind.
 
-Inspired by classic Java-based chest shop plugins that may not be compatible with the latest Minecraft versions, Simple Chest Shop offers a fresh take, built from the ground up with accessibility and ease of use in mind.
+## Details
+
+Right now the development is in it's extremely DEVELOPING stages, integration in towny and luckperms has not been put in yet.
+
+## Requirements
+
+- [Pyspigot](https://github.com/magicmq/pyspigot)
+- [Spigot](https://www.spigotmc.org/)
+- [Geyser](https://geysermc.org/)
+- Minecraft 1.21.3 *In theory*
+
+## Installation 
+
+Please place into the SCRIPTS folder of your Pyspigot plugin.
+
+```bash
+plugins/
+└── PySpigot/
+    └── scripts/
+        └── SimpleChestShop/
+            ├── main.py
+            └── config.yml
+```
+
 
 ## Core Principles
 
