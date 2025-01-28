@@ -13,9 +13,9 @@ name: "CodeQL Advanced"
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main,vault-integration,townyluckperms-integration" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main,vault-integration,townyluckperms-integration" ]
   schedule:
     - cron: '30 18 * * 4'
 
