@@ -9,11 +9,20 @@
 
 ## Overview
 
-Simple Chest Shop is a streamlined, user-friendly chest shop plugin designed specifically for Paper servers running Minecraft 1.21.3 with Py-Spigot. This project aims to bridge the gap between overly complex shop plugins and the need for a straightforward, intuitive solution, especially for neurodivergent players and server owners who value simplicity. It integrates seamlessly with TownyAdvanced, allowing players to easily create and manage shops within their towns or plots. This plugin supports Geyser, enabling Bedrock Edition players to enjoy the same chest shop experience as their Java Edition counterparts. Inspired by classic Java-based chest shop plugins that may not be compatible with the latest Minecraft versions, Simple Chest Shop offers a fresh take, built from the ground up with accessibility and ease of use in mind.
+Simple Chest Shop is a user-friendly and efficient chest shop plugin for Py-Spigot servers.  Designed to be straightforward and easy to use, it fills the need for a simple yet functional shop system without the complexities often found in other plugins.  It seamlessly integrates with TownyAdvanced, allowing players to create and manage shops within their towns and plots.  With Geyser support, Bedrock Edition players can also fully participate in the chest shop economy alongside Java Edition players.
 
-## Why Another Chest Shop Plugin?
+Inspired by the core functionality of classic chest shop plugins, Simple Chest Shop provides a clean and intuitive experience, prioritizing ease of use and essential features for both players and server administrators.
 
-Many existing chest shop plugins are feature-rich but often come with a steep learning curve, excessive commands, and complex security configurations. This can be particularly challenging for neurodivergent players or server owners seeking a hassle-free experience. Simple Chest Shop aims to provide a streamlined alternative that focuses on core functionality without sacrificing usability. We believe that a chest shop plugin should be easy to understand, configure, and use, regardless of one's experience level or neurotype.
+## Why Choose Simple Chest Shop?
+
+Many existing chest shop plugins, while powerful, can be overwhelming with their extensive command sets, intricate configurations, and steep learning curves.  Simple Chest Shop takes a different approach, focusing on providing the *essential* chest shop experience in a way that is:
+
+*   **Easy to Understand:**  Intuitive sign-based setup and clear player interactions.
+*   **Simple to Configure:**  Straightforward configuration options for server administrators.
+*   **Efficient and Lightweight:**  Focuses on core chest shop functionality without unnecessary bloat.
+*   **Accessible to All Players:**  Supports both Java and Bedrock Edition clients through Geyser integration.
+
+Simple Chest Shop is ideal for servers that value simplicity, ease of use, and a focus on core gameplay without sacrificing essential features. It provides a robust and user-friendly chest shop system that anyone can quickly learn and enjoy.
 
 
 ## Requirements
