@@ -10,7 +10,7 @@
 
 # Simple Chest Shop - Py-Spigot Edition
 
-<hr>
+
 
 ## Overview
 
