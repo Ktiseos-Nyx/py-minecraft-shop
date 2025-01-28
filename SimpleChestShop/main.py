@@ -1,12 +1,11 @@
-from spigotmc import plugin, event, Action, Material  # Explicitly import plugin, event, Action, Material
+from spigotmc import plugin, event  # Import plugin and event from spigotmc (removed Action, Material)
 import yaml
 import os
 from com.palmergames.bukkit.towny import TownyUniverse
-from org.bukkit import Material, Action  # You already have this, but Material and Action are now imported twice - can remove from here if you want.
-
-# Vault Imports (for Vault API)
+from org.bukkit import Material, Action  # Keep Material and Action import from org.bukkit
 from net.milkbowl.vault.economy import Economy
-from org.bukkit.plugin import RegisteredServiceProvider
+# Remove: from org.bukkit.plugin import RegisteredServiceProvider
+
 
 # --- Configuration ---
 config = {}
@@ -48,10 +47,19 @@ def load_config():
         try:
             with open(config_file_path, "r") as f:
                 config = yaml.safe_load(f)
-        except Exception as e:  # Catch any other potential errors during loading
-            print(f"[SimpleChestShop] Error loading config.yml: {e}")
+        except FileNotFoundError:  # Catch specific FileNotFoundError
+            print("[SimpleChestShop] config.yml not found, creating default...")
+            config = default_config
+            with open(config_file_path, "w") as f:
+                yaml.dump(default_config, f, indent=2)
+        except yaml.YAMLError as e:  # Catch specific yaml.YAMLError for YAML parsing errors
+            print(f"[SimpleChestShop] Error parsing config.yml (YAML error): {e}")
             print("[SimpleChestShop] Using default configuration.")
-            config = default_config  # Fallback to default config on error
+            config = default_config
+        except Exception as e:  # Catch any *other* unexpected exceptions (still broad, but less so)
+            print(f"[SimpleChestShop] Unexpected error loading config.yml: {e}")
+            print("[SimpleChestShop] Using default configuration.")
+            config = default_config
 
     # After loading (or creating) config, merge defaults to ensure all settings exist
     config = {**default_config, **(config or {})}  # Merge defaults with loaded config, prioritizing loaded values
@@ -74,8 +82,8 @@ def get_vault_economy():  # New function to get Vault Economy service
         VAULT_ENABLED = False
         return None  # Vault not found
 
-    rsp = server.getServicesManager().getRegistration(Economy) # Correctly using 'server'
-    
+    rsp = server.getServicesManager().getRegistration(Economy)  # Correctly using 'server'
+
     if rsp is None:  # Check if Economy service is registered
         print("[SimpleChestShop] Vault Economy service not found! Disabling Vault integration.")
         VAULT_ENABLED = False
@@ -100,7 +108,8 @@ def is_in_town(location):
     """Checks if the location is within a town."""
     try:
         return TownyUniverse.getInstance().getTownBlock(location).hasTown()  # Use hasTown() instead of is not None
-    except:
+    except Exception as e:  # Catch general Exception for Towny API errors (consider more specific if you know the type)
+        print(f"[SimpleChestShop] Error checking Towny location: {e}")  # Log the error for debugging
         return False
 
 
@@ -163,7 +172,7 @@ class SimpleChestShopPlugin:
     def on_enable(self):
         load_config()  # Load the configuration when the plugin starts
         print("[SimpleChestShop] Plugin enabled!")
-        get_vault_economy() # Call get_vault_economy() on plugin enable to detect and get Vault
+        get_vault_economy()  # Call get_vault_economy() on plugin enable to detect and get Vault
 
     def on_disable(self):
         """Called when the plugin is disabled."""  # Added docstring
