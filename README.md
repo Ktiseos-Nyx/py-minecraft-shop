@@ -1,5 +1,3 @@
-
-
 [![Project Status](https://img.shields.io/badge/Project%20Status-In%20Development-yellow.svg)](https://shields.io/)
 [![Minecraft Version](https://img.shields.io/badge/Minecraft-1.21.3-brightgreen.svg)](https://www.minecraft.net/)
 [![PySpigot](https://img.shields.io/badge/PySpigot-Supported-blue.svg)](https://www.spigotmc.org/wiki/pyspigot-installation/)
@@ -7,10 +5,7 @@
 [![Discord](https://img.shields.io/discord/1024442483750490222?logo=discord&style=for-the-badge&color=5865F2)](https://discord.gg/5t2kYxt7An)
 
 
-
 # Simple Chest Shop - Py-Spigot Edition
-
-
 
 ## Overview
 
@@ -26,7 +21,8 @@ Many existing chest shop plugins are feature-rich but often come with a steep le
 - [Pyspigot](https://github.com/magicmq/pyspigot)
 - [Spigot](https://www.spigotmc.org/)
 - [Geyser](https://geysermc.org/)
-- Minecraft 1.21.3 *In theory*
+- Minecraft!
+
 
 ## Installation 
 
