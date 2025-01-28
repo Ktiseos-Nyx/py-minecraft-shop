@@ -1,9 +1,18 @@
 from spigotmc import *
 import yaml
 import os  # Import the 'os' module for file system operations
+from com.palmergames.bukkit.towny import TownyUniverse # Import TownyUniverse for town checking
+from org.bukkit import Material, Action # Import Material and Action for block and action checking
+
+# Vault Imports (for Vault API)
+from net.milkbowl.vault.economy import Economy
+from org.bukkit.plugin import RegisteredServiceProvider
+
 
 # --- Configuration ---
 config = {}
+vault_enabled = False  # Global flag to track if Vault is enabled
+vault_economy = None   # Global variable to store the Vault Economy service
 
 def load_config():
     global config
@@ -40,20 +49,78 @@ def load_config():
     if config.get("settings", {}).get("debug_mode", False): # Example of using debug_mode from config
         print("[SimpleChestShop] Debug mode is enabled.")
 
+def get_vault_economy(): # New function to get Vault Economy service
+    """Retrieves the Vault economy service."""
+    global vault_economy, vault_enabled
+    if not config.get("vault", {}).get("enable_vault_integration", True): # Check if Vault integration is enabled in config
+        print("[SimpleChestShop] Vault integration is disabled in config.")
+        vault_enabled = False
+        return None # Vault integration disabled
+
+    if getServer().getPluginManager().getPlugin("Vault") is None: # Check if Vault plugin is installed
+        print("[SimpleChestShop] Vault plugin not found! Disabling Vault integration.")
+        vault_enabled = False
+        return None # Vault not found
+
+    rsp = getServer().getServicesManager().getRegistration(Economy) # Get service registration for Economy
+    if rsp is None: # Check if Economy service is registered
+        print("[SimpleChestShop] Vault Economy service not found! Disabling Vault integration.")
+        vault_enabled = False
+        return None # Economy service not found
+
+    vault_economy = rsp.getProvider() # Get the Economy provider
+    if vault_economy is not None: # Check if provider is valid
+        vault_enabled = True # Vault integration is successfully enabled
+        print("[SimpleChestShop] Vault integration enabled. Economy provider: " + vault_economy.getName()) # Log success
+        return vault_economy
+    else:
+        print("[SimpleChestShop] Failed to get Vault Economy provider! Disabling Vault integration.") # Log failure
+        vault_enabled = False # Vault integration failed
+        return None
+
+# --- Helper Functions ---
+
+def is_in_town(location):
+    """Checks if the location is within a town."""
+    try:
+        return TownyUniverse.getInstance().getTownBlock(location).hasTown() # Use hasTown() instead of is not None
+    except:
+        return False
+
+
+
 # --- Event Handlers ---
 
 @event("block.SignChangeEvent")
 def on_sign_change(event):
     player = event.getPlayer()
     lines = event.getLines()
+    location = event.getBlock().getLocation()
 
     if lines[0].lower() == "[shop]":
-        if config.get("settings", {}).get("enable_shop_creation", True): # Check if shop creation is enabled in config
-            message = config.get("messages", {}).get("shop_detected", "§aShop sign detected!") # Get message from config, default if not found
+        if config.get("permissions", {}).get("enable_permissions", True): # Check if permission checks are enabled
+            create_perm = config.get("permissions", {}).get("create_shop_permission", "chestshop.create") # Get permission node from config
+            if not player.hasPermission(create_perm): # Check if player has the create shop permission
+                message = config.get("messages", {}).get("no_shop_permission", "§c[Shop] System: You do not have permission to create shops.")
+                player.sendMessage(message)
+                event.setCancelled(True) # Cancel sign creation
+                return # Stop processing
+
+        if not config.get("towny", {}).get("enable_towny_integration", True):
+            pass
+        elif config.get("towny", {}).get("require_town", False):
+            if not is_in_town(location):
+                message = config.get("messages", {}).get("shop_must_be_in_town", "§c[Shop] System: Shops can only be created within town boundaries.")
+                player.sendMessage(message)
+                event.setCancelled(True)
+                return
+
+        if config.get("settings", {}).get("enable_shop_creation", True):
+            message = config.get("messages", {}).get("shop_detected", "§aShop sign detected!")
             player.sendMessage(message)
         else:
-            player.sendMessage("§c[Shop] System: Shop creation is currently disabled by the server.") # Inform player shop creation is disabled
-            event.setCancelled(True) # Cancel the sign change to prevent shop creation
+            player.sendMessage("§c[Shop] System: Shop creation is currently disabled by the server.")
+            event.setCancelled(True)
 
 @event("player.PlayerInteractEvent")
 def on_player_interact(event):
