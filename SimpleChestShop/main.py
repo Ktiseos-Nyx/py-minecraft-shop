@@ -69,12 +69,13 @@ def get_vault_economy():  # New function to get Vault Economy service
         VAULT_ENABLED = False
         return None  # Vault integration disabled
 
-    if getServer().getPluginManager().getPlugin("Vault") is None:  # Check if Vault plugin is installed
+    if server.getPluginManager().getPlugin("Vault") is None:  # Correctly using 'server'
         print("[SimpleChestShop] Vault plugin not found! Disabling Vault integration.")
         VAULT_ENABLED = False
         return None  # Vault not found
 
-    rsp = getServer().getServicesManager().getRegistration(Economy)  # Get service registration for Economy
+    rsp = server.getServicesManager().getRegistration(Economy) # Correctly using 'server'
+    
     if rsp is None:  # Check if Economy service is registered
         print("[SimpleChestShop] Vault Economy service not found! Disabling Vault integration.")
         VAULT_ENABLED = False
