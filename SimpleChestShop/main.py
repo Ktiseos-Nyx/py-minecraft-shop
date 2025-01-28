@@ -61,23 +61,23 @@ def load_config():
     if not os.path.exists(config_file_path):  # Check if config.yml file exists
         print("[SimpleChestShop] config.yml not found, creating default...")
         config = default_config  # Use the default config
-        with open(config_file_path, "w") as config_file: # Renamed 'f' to 'config_file'
+        with open(config_file_path, "w") as config_file:  # Renamed 'f' to 'config_file'
             yaml.dump(default_config, config_file, indent=2)  # Save default config to file
     else:
         try:
-            with open(config_file_path, "r") as config_file: # Renamed 'f' to 'config_file'
+            with open(config_file_path, "r") as config_file:  # Renamed 'f' to 'config_file'
                 config = yaml.safe_load(config_file)
         except FileNotFoundError:  # Catch specific FileNotFoundError
             print("[SimpleChestShop] config.yml not found, creating default...")
             config = default_config
-            with open(config_file_path, "w") as config_file: # Renamed 'f' to 'config_file'
+            with open(config_file_path, "w") as config_file:  # Renamed 'f' to 'config_file'
                 yaml.dump(default_config, config_file, indent=2)
         except yaml.YAMLError as exception:  # Catch specific yaml.YAMLError for YAML parsing errors # Renamed 'e' to 'exception'
-            print(f"[SimpleChestShop] Error parsing config.yml (YAML error): {exception}") # Use 'exception'
+            print(f"[SimpleChestShop] Error parsing config.yml (YAML error): {exception}")  # Use 'exception'
             print("[SimpleChestShop] Using default configuration.")
             config = default_config
         except Exception as exception:  # Catch any *other* unexpected exceptions (still broad, but less so) # Renamed 'e' to 'exception'
-            print(f"[SimpleChestShop] Unexpected error loading config.yml: {exception}") # Use 'exception'
+            print(f"[SimpleChestShop] Unexpected error loading config.yml: {exception}")  # Use 'exception'
             print("[SimpleChestShop] Using default configuration.")
             config = default_config
 
