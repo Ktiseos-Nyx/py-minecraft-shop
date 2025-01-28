@@ -6,5 +6,16 @@ settings:
 
 messages:
   shop_detected: "§a[Shop] System: Shop sign detected and enabled!"
-  no_shop_permission: "§c[Shop] System: You do not have permission to create shops."
+  no_shop_permission: "§c[Shop] System: You do not have permission to create shops." # Existing message
+  shop_must_be_in_town: "§c[Shop] System: Shops can only be created within town boundaries." # Existing message
+
+towny:
+  enable_towny_integration: true # Master switch for Towny integration
+  require_town: false         # If true, shops must be created within a town
+
+permissions:
+  enable_permissions: true    # Master switch for permission checks
+  create_shop_permission: "chestshop.create" # Permission node for creating shops
+  # Add more Towny settings here later
+
   # Add more messages here as we develop the plugin
