@@ -1,20 +1,39 @@
-from spigotmc import plugin, event, Action, Material  # Explicitly import plugin, event, Action, Material
-import yaml
-import os
-from com.palmergames.bukkit.towny import TownyUniverse
-from org.bukkit import Material, Action  # You already have this, but Material and Action are now imported twice - can remove from here if you want.
+"""
+SimpleChestShop - A PySpigot plugin for creating simple chest shops in Minecraft.
 
-# Vault Imports (for Vault API)
-from net.milkbowl.vault.economy import Economy
-from org.bukkit.plugin import RegisteredServiceProvider
+This plugin allows players to create chest shops by placing signs on chests,
+enabling item trading with other players using server currency (via Vault).
+Integrates with TownyAdvanced for town-based shop restrictions and LuckPerms
+for permission control.
+"""
+import os  # Standard library imports FIRST
+import yaml
+
+from spigotmc import (  # spigotmc imports next - Grouped and broken into lines
+    plugin,
+    event,
+    Action,
+    Material
+)
+
+from com.palmergames.bukkit.towny import TownyUniverse  # com.palmergames imports next
+from net.milkbowl.vault.economy import Economy  # net.milkbowl imports next
+
+from org.bukkit import (  # org.bukkit imports last - Grouped and broken into lines
+    Material,
+    Action
+)
+# Removed: from org.bukkit.plugin import RegisteredServiceProvider - Unused import removed
+
 
 # --- Configuration ---
-config = {}
-VAULT_ENABLED = False  # Global flag to track if Vault is enabled (RENAMED)
-VAULT_ECONOMY = None  # Global variable to store the Vault Economy service (RENAMED)
+config = {}  # Global configuration dictionary - Correct variable name style
+VAULT_ENABLED = False  # Global flag to track if Vault is enabled (RENAMED to UPPER_CASE)
+VAULT_ECONOMY = None  # Global variable to store the Vault Economy service (RENAMED to UPPER_CASE)
 
 
 def load_config():
+    """Loads the plugin configuration from config.yml or creates a default config if not found."""
     global config
     config_file_path = "plugins/PySpigot/scripts/SimpleChestShop/config.yml"
     default_config = {  # Define our default configuration as a Python dictionary
@@ -42,16 +61,25 @@ def load_config():
     if not os.path.exists(config_file_path):  # Check if config.yml file exists
         print("[SimpleChestShop] config.yml not found, creating default...")
         config = default_config  # Use the default config
-        with open(config_file_path, "w") as f:
-            yaml.dump(default_config, f, indent=2)  # Save default config to file
+        with open(config_file_path, "w") as config_file: # Renamed 'f' to 'config_file'
+            yaml.dump(default_config, config_file, indent=2)  # Save default config to file
     else:
         try:
-            with open(config_file_path, "r") as f:
-                config = yaml.safe_load(f)
-        except Exception as e:  # Catch any other potential errors during loading
-            print(f"[SimpleChestShop] Error loading config.yml: {e}")
+            with open(config_file_path, "r") as config_file: # Renamed 'f' to 'config_file'
+                config = yaml.safe_load(config_file)
+        except FileNotFoundError:  # Catch specific FileNotFoundError
+            print("[SimpleChestShop] config.yml not found, creating default...")
+            config = default_config
+            with open(config_file_path, "w") as config_file: # Renamed 'f' to 'config_file'
+                yaml.dump(default_config, config_file, indent=2)
+        except yaml.YAMLError as exception:  # Catch specific yaml.YAMLError for YAML parsing errors # Renamed 'e' to 'exception'
+            print(f"[SimpleChestShop] Error parsing config.yml (YAML error): {exception}") # Use 'exception'
             print("[SimpleChestShop] Using default configuration.")
-            config = default_config  # Fallback to default config on error
+            config = default_config
+        except Exception as exception:  # Catch any *other* unexpected exceptions (still broad, but less so) # Renamed 'e' to 'exception'
+            print(f"[SimpleChestShop] Unexpected error loading config.yml: {exception}") # Use 'exception'
+            print("[SimpleChestShop] Using default configuration.")
+            config = default_config
 
     # After loading (or creating) config, merge defaults to ensure all settings exist
     config = {**default_config, **(config or {})}  # Merge defaults with loaded config, prioritizing loaded values
@@ -69,12 +97,13 @@ def get_vault_economy():  # New function to get Vault Economy service
         VAULT_ENABLED = False
         return None  # Vault integration disabled
 
-    if getServer().getPluginManager().getPlugin("Vault") is None:  # Check if Vault plugin is installed
+    if server.getPluginManager().getPlugin("Vault") is None:  # Correctly using 'server'
         print("[SimpleChestShop] Vault plugin not found! Disabling Vault integration.")
         VAULT_ENABLED = False
         return None  # Vault not found
 
-    rsp = getServer().getServicesManager().getRegistration(Economy)  # Get service registration for Economy
+    rsp = server.getServicesManager().getRegistration(Economy)  # Correctly using 'server'
+
     if rsp is None:  # Check if Economy service is registered
         print("[SimpleChestShop] Vault Economy service not found! Disabling Vault integration.")
         VAULT_ENABLED = False
@@ -83,8 +112,7 @@ def get_vault_economy():  # New function to get Vault Economy service
     VAULT_ECONOMY = rsp.getProvider()  # Get the Economy provider
     if VAULT_ECONOMY is not None:
         VAULT_ENABLED = True
-        print("[SimpleChestShop] Vault integration enabled. Economy provider: " +  # Corrected line break
-              VAULT_ECONOMY.getName())
+        print(f"[SimpleChestShop] Vault integration enabled. Economy provider: {VAULT_ECONOMY.getName()}")  # Using f-string, shorter line
         return VAULT_ECONOMY
 
     # No 'else' needed here!  If we reach this point, it means the 'if' condition was false.
@@ -99,7 +127,8 @@ def is_in_town(location):
     """Checks if the location is within a town."""
     try:
         return TownyUniverse.getInstance().getTownBlock(location).hasTown()  # Use hasTown() instead of is not None
-    except:
+    except Exception as exception:  # Catch general Exception for Towny API errors (consider more specific if you know the type) # Renamed 'e' to 'exception'
+        print(f"[SimpleChestShop] Error checking Towny location: {exception}")  # Log the error for debugging # Use 'exception'
         return False
 
 
@@ -107,6 +136,7 @@ def is_in_town(location):
 
 @event("block.SignChangeEvent")
 def on_sign_change(event):
+    """Handles the sign change event to create chest shops."""
     player = event.getPlayer()
     lines = event.getLines()
     location = event.getBlock().getLocation()
@@ -122,7 +152,7 @@ def on_sign_change(event):
                 event.setCancelled(True)  # Cancel sign creation
                 return  # Stop processing
 
-        if not config.get(  # Corrected line break and indentation
+        if not config.get(  # Corrected indentation - Added 1 space for continued line
                 "towny", {}
         ).get(
                 "enable_towny_integration",
@@ -130,8 +160,8 @@ def on_sign_change(event):
         ):
             pass
         elif config.get("towny", {}).get("require_town", False):
-            if not is_in_town(location):
-                message = config.get("messages", {}).get("shop_must_be_in_town",
+            if not is_in_town(location):  # Corrected indentation - Removed extra indentation
+                message = config.get("messages", {}).get("shop_must_be_in_town",  # Corrected indentation - Removed extra indentation
                                                         "§c[Shop] System: Shops can only be created within town boundaries.")
                 player.sendMessage(message)
                 event.setCancelled(True)
@@ -147,6 +177,7 @@ def on_sign_change(event):
 
 @event("player.PlayerInteractEvent")
 def on_player_interact(event):
+    """Handles player interaction events, specifically right-clicking chests."""
     # This function will be called when a player interacts with something
     if event.getAction() == Action.RIGHT_CLICK_BLOCK:  # Check if it's a right-click on a block
         block = event.getClickedBlock()
@@ -159,11 +190,14 @@ def on_player_interact(event):
 
 @plugin("SimpleChestShop")  # This name will be used to identify your plugin
 class SimpleChestShopPlugin:
+    """Main plugin class for SimpleChestShop."""
+
     def on_enable(self):
+        """Called when the plugin is enabled."""
         load_config()  # Load the configuration when the plugin starts
         print("[SimpleChestShop] Plugin enabled!")
-        get_vault_economy() # Call get_vault_economy() on plugin enable to detect and get Vault
+        get_vault_economy()  # Call get_vault_economy() on plugin enable to detect and get Vault
 
     def on_disable(self):
-        """Called when the plugin is disabled."""  # Added docstring
+        """Called when the plugin is disabled."""
         print("[SimpleChestShop] Plugin disabled!")
