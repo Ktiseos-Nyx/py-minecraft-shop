@@ -1,69 +1,141 @@
 # coding: utf-8
 
+from __future__ import print_function
+
 # partially from package six by Benjamin Peterson
 
 import sys
 import os
-import io
+import types
 import traceback
 from abc import abstractmethod
-import collections.abc
 
 
 # fmt: off
-from typing import Any, Dict, Optional, List, Union, BinaryIO, IO, Text, Tuple  # NOQA
-from typing import Optional  # NOQA
-try:
-    from typing import SupportsIndex as SupportsIndex  # in order to reexport for mypy
-except ImportError:
-    SupportsIndex = int  # type: ignore
+if False:  # MYPY
+    from typing import Any, Dict, Optional, List, Union, BinaryIO, IO, Text, Tuple  # NOQA
+    from typing import Optional  # NOQA
 # fmt: on
-
 
 _DEFAULT_YAML_VERSION = (1, 2)
 
 try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict  # type: ignore
-
+    from ruamel.ordereddict import ordereddict
+except:  # NOQA
+    try:
+        from collections import OrderedDict
+    except ImportError:
+        from ordereddict import OrderedDict  # type: ignore
     # to get the right name import ... as ordereddict doesn't do that
 
+    class ordereddict(OrderedDict):  # type: ignore
+        if not hasattr(OrderedDict, 'insert'):
 
-class ordereddict(OrderedDict):  # type: ignore
-    if not hasattr(OrderedDict, 'insert'):
-
-        def insert(self, pos: int, key: Any, value: Any) -> None:
-            if pos >= len(self):
-                self[key] = value
-                return
-            od = ordereddict()
-            od.update(self)
-            for k in od:
-                del self[k]
-            for index, old_key in enumerate(od):
-                if pos == index:
+            def insert(self, pos, key, value):
+                # type: (int, Any, Any) -> None
+                if pos >= len(self):
                     self[key] = value
-                self[old_key] = od[old_key]
+                    return
+                od = ordereddict()
+                od.update(self)
+                for k in od:
+                    del self[k]
+                for index, old_key in enumerate(od):
+                    if pos == index:
+                        self[key] = value
+                    self[old_key] = od[old_key]
 
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 
-StringIO = io.StringIO
-BytesIO = io.BytesIO
 
-# StreamType = Union[BinaryIO, IO[str], IO[unicode],  StringIO]
-# StreamType = Union[BinaryIO, IO[str], StringIO]  # type: ignore
-StreamType = Any
+if PY3:
 
-StreamTextType = StreamType  # Union[Text, StreamType]
-VersionType = Union[List[int], str, Tuple[int, int]]
+    def utf8(s):
+        # type: (str) -> str
+        return s
 
-builtins_module = 'builtins'
+    def to_str(s):
+        # type: (str) -> str
+        return s
+
+    def to_unicode(s):
+        # type: (str) -> str
+        return s
 
 
-def with_metaclass(meta: Any, *bases: Any) -> Any:
+else:
+    if False:
+        unicode = str
+
+    def utf8(s):
+        # type: (unicode) -> str
+        return s.encode('utf-8')
+
+    def to_str(s):
+        # type: (str) -> str
+        return str(s)
+
+    def to_unicode(s):
+        # type: (str) -> unicode
+        return unicode(s)  # NOQA
+
+
+if PY3:
+    string_types = str
+    integer_types = int
+    class_types = type
+    text_type = str
+    binary_type = bytes
+
+    MAXSIZE = sys.maxsize
+    unichr = chr
+    import io
+
+    StringIO = io.StringIO
+    BytesIO = io.BytesIO
+    # have unlimited precision
+    no_limit_int = int
+    from collections.abc import Hashable, MutableSequence, MutableMapping, Mapping  # NOQA
+
+else:
+    string_types = basestring  # NOQA
+    integer_types = (int, long)  # NOQA
+    class_types = (type, types.ClassType)
+    text_type = unicode  # NOQA
+    binary_type = str
+
+    # to allow importing
+    unichr = unichr
+    from StringIO import StringIO as _StringIO
+
+    StringIO = _StringIO
+    import cStringIO
+
+    BytesIO = cStringIO.StringIO
+    # have unlimited precision
+    no_limit_int = long  # NOQA not available on Python 3
+    from collections import Hashable, MutableSequence, MutableMapping, Mapping  # NOQA
+
+if False:  # MYPY
+    # StreamType = Union[BinaryIO, IO[str], IO[unicode],  StringIO]
+    # StreamType = Union[BinaryIO, IO[str], StringIO]  # type: ignore
+    StreamType = Any
+
+    StreamTextType = StreamType  # Union[Text, StreamType]
+    VersionType = Union[List[int], str, Tuple[int, int]]
+
+if PY3:
+    builtins_module = 'builtins'
+else:
+    builtins_module = '__builtin__'
+
+UNICODE_SIZE = 4 if sys.maxunicode > 65535 else 2
+
+
+def with_metaclass(meta, *bases):
+    # type: (Any, Any) -> Any
     """Create a base class with a metaclass."""
     return meta('NewBase', bases, {})
 
@@ -73,7 +145,7 @@ DBG_EVENT = 2
 DBG_NODE = 4
 
 
-_debug: Optional[int] = None
+_debug = None  # type: Optional[int]
 if 'RUAMELDEBUG' in os.environ:
     _debugx = os.environ.get('RUAMELDEBUG')
     if _debugx is None:
@@ -84,22 +156,26 @@ if 'RUAMELDEBUG' in os.environ:
 
 if bool(_debug):
 
-    class ObjectCounter:
-        def __init__(self) -> None:
-            self.map: Dict[Any, Any] = {}
+    class ObjectCounter(object):
+        def __init__(self):
+            # type: () -> None
+            self.map = {}  # type: Dict[Any, Any]
 
-        def __call__(self, k: Any) -> None:
+        def __call__(self, k):
+            # type: (Any) -> None
             self.map[k] = self.map.get(k, 0) + 1
 
-        def dump(self) -> None:
+        def dump(self):
+            # type: () -> None
             for k in sorted(self.map):
-                sys.stdout.write(f'{k} -> {self.map[k]}')
+                sys.stdout.write('{} -> {}'.format(k, self.map[k]))
 
     object_counter = ObjectCounter()
 
 
 # used from yaml util when testing
-def dbg(val: Any = None) -> Any:
+def dbg(val=None):
+    # type: (Any) -> Any
     global _debug
     if _debug is None:
         # set to true or false
@@ -113,13 +189,15 @@ def dbg(val: Any = None) -> Any:
     return _debug & val
 
 
-class Nprint:
-    def __init__(self, file_name: Any = None) -> None:
-        self._max_print: Any = None
-        self._count: Any = None
+class Nprint(object):
+    def __init__(self, file_name=None):
+        # type: (Any) -> None
+        self._max_print = None  # type: Any
+        self._count = None  # type: Any
         self._file_name = file_name
 
-    def __call__(self, *args: Any, **kw: Any) -> None:
+    def __call__(self, *args, **kw):
+        # type: (Any, Any) -> None
         if not bool(_debug):
             return
         out = sys.stdout if self._file_name is None else open(self._file_name, 'a')
@@ -140,13 +218,10 @@ class Nprint:
         if self._file_name:
             out.close()
 
-    def set_max_print(self, i: int) -> None:
+    def set_max_print(self, i):
+        # type: (int) -> None
         self._max_print = i
         self._count = None
-
-    def fp(self, mode: str = 'a') -> Any:
-        out = sys.stdout if self._file_name is None else open(self._file_name, mode)
-        return out
 
 
 nprint = Nprint()
@@ -155,25 +230,28 @@ nprintf = Nprint('/var/tmp/ruamel.yaml.log')
 # char checkers following production rules
 
 
-def check_namespace_char(ch: Any) -> bool:
-    if '\x21' <= ch <= '\x7E':  # ! to ~
+def check_namespace_char(ch):
+    # type: (Any) -> bool
+    if u'\x21' <= ch <= u'\x7E':  # ! to ~
         return True
-    if '\xA0' <= ch <= '\uD7FF':
+    if u'\xA0' <= ch <= u'\uD7FF':
         return True
-    if ('\uE000' <= ch <= '\uFFFD') and ch != '\uFEFF':  # excl. byte order mark
+    if (u'\uE000' <= ch <= u'\uFFFD') and ch != u'\uFEFF':  # excl. byte order mark
         return True
-    if '\U00010000' <= ch <= '\U0010FFFF':
+    if u'\U00010000' <= ch <= u'\U0010FFFF':
         return True
     return False
 
 
-def check_anchorname_char(ch: Any) -> bool:
-    if ch in ',[]{}':
+def check_anchorname_char(ch):
+    # type: (Any) -> bool
+    if ch in u',[]{}':
         return False
     return check_namespace_char(ch)
 
 
-def version_tnf(t1: Any, t2: Any = None) -> Any:
+def version_tnf(t1, t2=None):
+    # type: (Any, Any) -> Any
     """
     return True if ruamel.yaml version_info < t1, None if t2 is specified and bigger else False
     """
@@ -186,15 +264,17 @@ def version_tnf(t1: Any, t2: Any = None) -> Any:
     return False
 
 
-class MutableSliceableSequence(collections.abc.MutableSequence):  # type: ignore
+class MutableSliceableSequence(MutableSequence):  # type: ignore
     __slots__ = ()
 
-    def __getitem__(self, index: Any) -> Any:
+    def __getitem__(self, index):
+        # type: (Any) -> Any
         if not isinstance(index, slice):
             return self.__getsingleitem__(index)
         return type(self)([self[i] for i in range(*index.indices(len(self)))])  # type: ignore
 
-    def __setitem__(self, index: Any, value: Any) -> None:
+    def __setitem__(self, index, value):
+        # type: (Any, Any) -> None
         if not isinstance(index, slice):
             return self.__setsingleitem__(index, value)
         assert iter(value)
@@ -209,16 +289,19 @@ class MutableSliceableSequence(collections.abc.MutableSequence):  # type: ignore
             # need to test before changing, in case TypeError is caught
             if nr_assigned_items < len(value):
                 raise TypeError(
-                    f'too many elements in value {nr_assigned_items} < {len(value)}'
+                    'too many elements in value {} < {}'.format(nr_assigned_items, len(value))
                 )
             elif nr_assigned_items > len(value):
                 raise TypeError(
-                    f'not enough elements in value {nr_assigned_items} > {len(value)}'
+                    'not enough elements in value {} > {}'.format(
+                        nr_assigned_items, len(value)
+                    )
                 )
             for idx, i in enumerate(range(*range_parms)):
                 self[i] = value[idx]
 
-    def __delitem__(self, index: Any) -> None:
+    def __delitem__(self, index):
+        # type: (Any) -> None
         if not isinstance(index, slice):
             return self.__delsingleitem__(index)
         # nprint(index.start, index.stop, index.step, index.indices(len(self)))
@@ -226,13 +309,16 @@ class MutableSliceableSequence(collections.abc.MutableSequence):  # type: ignore
             del self[i]
 
     @abstractmethod
-    def __getsingleitem__(self, index: Any) -> Any:
+    def __getsingleitem__(self, index):
+        # type: (Any) -> Any
         raise IndexError
 
     @abstractmethod
-    def __setsingleitem__(self, index: Any, value: Any) -> None:
+    def __setsingleitem__(self, index, value):
+        # type: (Any, Any) -> None
         raise IndexError
 
     @abstractmethod
-    def __delsingleitem__(self, index: Any) -> None:
+    def __delsingleitem__(self, index):
+        # type: (Any) -> None
         raise IndexError

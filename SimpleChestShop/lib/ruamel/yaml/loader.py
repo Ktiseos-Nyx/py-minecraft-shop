@@ -1,5 +1,8 @@
 # coding: utf-8
 
+from __future__ import absolute_import
+
+
 from ruamel.yaml.reader import Reader
 from ruamel.yaml.scanner import Scanner, RoundTripScanner
 from ruamel.yaml.parser import Parser, RoundTripParser
@@ -12,20 +15,16 @@ from ruamel.yaml.constructor import (
 )
 from ruamel.yaml.resolver import VersionedResolver
 
-from typing import Any, Dict, List, Union, Optional  # NOQA
-from ruamel.yaml.compat import StreamTextType, VersionType  # NOQA
+if False:  # MYPY
+    from typing import Any, Dict, List, Union, Optional  # NOQA
+    from ruamel.yaml.compat import StreamTextType, VersionType  # NOQA
 
 __all__ = ['BaseLoader', 'SafeLoader', 'Loader', 'RoundTripLoader']
 
 
 class BaseLoader(Reader, Scanner, Parser, Composer, BaseConstructor, VersionedResolver):
-    def __init__(
-        self,
-        stream: StreamTextType,
-        version: Optional[VersionType] = None,
-        preserve_quotes: Optional[bool] = None,
-    ) -> None:
-        self.comment_handling = None
+    def __init__(self, stream, version=None, preserve_quotes=None):
+        # type: (StreamTextType, Optional[VersionType], Optional[bool]) -> None
         Reader.__init__(self, stream, loader=self)
         Scanner.__init__(self, loader=self)
         Parser.__init__(self, loader=self)
@@ -35,13 +34,8 @@ class BaseLoader(Reader, Scanner, Parser, Composer, BaseConstructor, VersionedRe
 
 
 class SafeLoader(Reader, Scanner, Parser, Composer, SafeConstructor, VersionedResolver):
-    def __init__(
-        self,
-        stream: StreamTextType,
-        version: Optional[VersionType] = None,
-        preserve_quotes: Optional[bool] = None,
-    ) -> None:
-        self.comment_handling = None
+    def __init__(self, stream, version=None, preserve_quotes=None):
+        # type: (StreamTextType, Optional[VersionType], Optional[bool]) -> None
         Reader.__init__(self, stream, loader=self)
         Scanner.__init__(self, loader=self)
         Parser.__init__(self, loader=self)
@@ -51,13 +45,8 @@ class SafeLoader(Reader, Scanner, Parser, Composer, SafeConstructor, VersionedRe
 
 
 class Loader(Reader, Scanner, Parser, Composer, Constructor, VersionedResolver):
-    def __init__(
-        self,
-        stream: StreamTextType,
-        version: Optional[VersionType] = None,
-        preserve_quotes: Optional[bool] = None,
-    ) -> None:
-        self.comment_handling = None
+    def __init__(self, stream, version=None, preserve_quotes=None):
+        # type: (StreamTextType, Optional[VersionType], Optional[bool]) -> None
         Reader.__init__(self, stream, loader=self)
         Scanner.__init__(self, loader=self)
         Parser.__init__(self, loader=self)
@@ -74,14 +63,9 @@ class RoundTripLoader(
     RoundTripConstructor,
     VersionedResolver,
 ):
-    def __init__(
-        self,
-        stream: StreamTextType,
-        version: Optional[VersionType] = None,
-        preserve_quotes: Optional[bool] = None,
-    ) -> None:
+    def __init__(self, stream, version=None, preserve_quotes=None):
+        # type: (StreamTextType, Optional[VersionType], Optional[bool]) -> None
         # self.reader = Reader.__init__(self, stream)
-        self.comment_handling = None  # issue 385
         Reader.__init__(self, stream, loader=self)
         RoundTripScanner.__init__(self, loader=self)
         RoundTripParser.__init__(self, loader=self)

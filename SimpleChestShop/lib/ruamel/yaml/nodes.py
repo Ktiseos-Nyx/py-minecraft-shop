@@ -1,42 +1,28 @@
 # coding: utf-8
 
+from __future__ import print_function
+
 import sys
+from .compat import string_types
 
-from typing import Dict, Any, Text, Optional  # NOQA
-from ruamel.yaml.tag import Tag
+if False:  # MYPY
+    from typing import Dict, Any, Text  # NOQA
 
 
-class Node:
-    __slots__ = 'ctag', 'value', 'start_mark', 'end_mark', 'comment', 'anchor'
+class Node(object):
+    __slots__ = 'tag', 'value', 'start_mark', 'end_mark', 'comment', 'anchor'
 
-    def __init__(
-        self,
-        tag: Any,
-        value: Any,
-        start_mark: Any,
-        end_mark: Any,
-        comment: Any = None,
-        anchor: Any = None,
-    ) -> None:
-        # you can still get a string from the serializer
-        self.ctag = tag if isinstance(tag, Tag) else Tag(suffix=tag)
+    def __init__(self, tag, value, start_mark, end_mark, comment=None, anchor=None):
+        # type: (Any, Any, Any, Any, Any, Any) -> None
+        self.tag = tag
         self.value = value
         self.start_mark = start_mark
         self.end_mark = end_mark
         self.comment = comment
         self.anchor = anchor
 
-    @property
-    def tag(self) -> Optional[str]:
-        return None if self.ctag is None else str(self.ctag)
-
-    @tag.setter
-    def tag(self, val: Any) -> None:
-        if isinstance(val, str):
-            val = Tag(suffix=val)
-        self.ctag = val
-
-    def __repr__(self) -> Any:
+    def __repr__(self):
+        # type: () -> str
         value = self.value
         # if isinstance(value, list):
         #     if len(value) == 0:
@@ -44,26 +30,31 @@ class Node:
         #     elif len(value) == 1:
         #         value = '<1 item>'
         #     else:
-        #         value = f'<{len(value)} items>'
+        #         value = '<%d items>' % len(value)
         # else:
         #     if len(value) > 75:
-        #         value = repr(value[:70]+' ... ')
+        #         value = repr(value[:70]+u' ... ')
         #     else:
         #         value = repr(value)
         value = repr(value)
-        return f'{self.__class__.__name__!s}(tag={self.tag!r}, value={value!s})'
+        return '%s(tag=%r, value=%s)' % (self.__class__.__name__, self.tag, value)
 
-    def dump(self, indent: int = 0) -> None:
-        xx = self.__class__.__name__
-        xi = '  ' * indent
-        if isinstance(self.value, str):
-            sys.stdout.write(f'{xi}{xx}(tag={self.tag!r}, value={self.value!r})\n')
+    def dump(self, indent=0):
+        # type: (int) -> None
+        if isinstance(self.value, string_types):
+            sys.stdout.write(
+                '{}{}(tag={!r}, value={!r})\n'.format(
+                    '  ' * indent, self.__class__.__name__, self.tag, self.value
+                )
+            )
             if self.comment:
-                sys.stdout.write(f'    {xi}comment: {self.comment})\n')
+                sys.stdout.write('    {}comment: {})\n'.format('  ' * indent, self.comment))
             return
-        sys.stdout.write(f'{xi}{xx}(tag={self.tag!r})\n')
+        sys.stdout.write(
+            '{}{}(tag={!r})\n'.format('  ' * indent, self.__class__.__name__, self.tag)
+        )
         if self.comment:
-            sys.stdout.write(f'    {xi}comment: {self.comment})\n')
+            sys.stdout.write('    {}comment: {})\n'.format('  ' * indent, self.comment))
         for v in self.value:
             if isinstance(v, tuple):
                 for v1 in v:
@@ -71,7 +62,7 @@ class Node:
             elif isinstance(v, Node):
                 v.dump(indent + 1)
             else:
-                sys.stdout.write(f'Node value type? {type(v)}\n')
+                sys.stdout.write('Node value type? {}\n'.format(type(v)))
 
 
 class ScalarNode(Node):
@@ -88,15 +79,9 @@ class ScalarNode(Node):
     id = 'scalar'
 
     def __init__(
-        self,
-        tag: Any,
-        value: Any,
-        start_mark: Any = None,
-        end_mark: Any = None,
-        style: Any = None,
-        comment: Any = None,
-        anchor: Any = None,
-    ) -> None:
+        self, tag, value, start_mark=None, end_mark=None, style=None, comment=None, anchor=None
+    ):
+        # type: (Any, Any, Any, Any, Any, Any, Any) -> None
         Node.__init__(self, tag, value, start_mark, end_mark, comment=comment, anchor=anchor)
         self.style = style
 
@@ -106,14 +91,15 @@ class CollectionNode(Node):
 
     def __init__(
         self,
-        tag: Any,
-        value: Any,
-        start_mark: Any = None,
-        end_mark: Any = None,
-        flow_style: Any = None,
-        comment: Any = None,
-        anchor: Any = None,
-    ) -> None:
+        tag,
+        value,
+        start_mark=None,
+        end_mark=None,
+        flow_style=None,
+        comment=None,
+        anchor=None,
+    ):
+        # type: (Any, Any, Any, Any, Any, Any, Any) -> None
         Node.__init__(self, tag, value, start_mark, end_mark, comment=comment)
         self.flow_style = flow_style
         self.anchor = anchor
@@ -130,14 +116,15 @@ class MappingNode(CollectionNode):
 
     def __init__(
         self,
-        tag: Any,
-        value: Any,
-        start_mark: Any = None,
-        end_mark: Any = None,
-        flow_style: Any = None,
-        comment: Any = None,
-        anchor: Any = None,
-    ) -> None:
+        tag,
+        value,
+        start_mark=None,
+        end_mark=None,
+        flow_style=None,
+        comment=None,
+        anchor=None,
+    ):
+        # type: (Any, Any, Any, Any, Any, Any, Any) -> None
         CollectionNode.__init__(
             self, tag, value, start_mark, end_mark, flow_style, comment, anchor
         )

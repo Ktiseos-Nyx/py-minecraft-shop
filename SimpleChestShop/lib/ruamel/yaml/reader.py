@@ -1,5 +1,7 @@
 # coding: utf-8
 
+from __future__ import absolute_import
+
 # This module contains abstractions for the input stream. You don't have to
 # looks further, there are no pretty code.
 #
@@ -22,89 +24,99 @@
 import codecs
 
 from ruamel.yaml.error import YAMLError, FileMark, StringMark, YAMLStreamError
+from ruamel.yaml.compat import text_type, binary_type, PY3, UNICODE_SIZE
 from ruamel.yaml.util import RegExp
 
-from typing import Any, Dict, Optional, List, Union, Text, Tuple, Optional  # NOQA
-# from ruamel.yaml.compat import StreamTextType  # NOQA
+if False:  # MYPY
+    from typing import Any, Dict, Optional, List, Union, Text, Tuple, Optional  # NOQA
+#    from ruamel.yaml.compat import StreamTextType  # NOQA
 
 __all__ = ['Reader', 'ReaderError']
 
 
 class ReaderError(YAMLError):
-    def __init__(
-        self, name: Any, position: Any, character: Any, encoding: Any, reason: Any
-    ) -> None:
+    def __init__(self, name, position, character, encoding, reason):
+        # type: (Any, Any, Any, Any, Any) -> None
         self.name = name
         self.character = character
         self.position = position
         self.encoding = encoding
         self.reason = reason
 
-    def __str__(self) -> Any:
-        if isinstance(self.character, bytes):
-            return (
-                f"'{self.encoding!s}' codec can't decode byte #x{ord(self.character):02x}: "
-                f'{self.reason!s}\n'
-                f'  in "{self.name!s}", position {self.position:d}'
+    def __str__(self):
+        # type: () -> str
+        if isinstance(self.character, binary_type):
+            return "'%s' codec can't decode byte #x%02x: %s\n" '  in "%s", position %d' % (
+                self.encoding,
+                ord(self.character),
+                self.reason,
+                self.name,
+                self.position,
             )
         else:
-            return (
-                f'unacceptable character #x{self.character:04x}: {self.reason!s}\n'
-                f'  in "{self.name!s}", position {self.position:d}'
+            return 'unacceptable character #x%04x: %s\n' '  in "%s", position %d' % (
+                self.character,
+                self.reason,
+                self.name,
+                self.position,
             )
 
 
-class Reader:
+class Reader(object):
     # Reader:
     # - determines the data encoding and converts it to a unicode string,
     # - checks if characters are in allowed range,
     # - adds '\0' to the end.
 
     # Reader accepts
-    #  - a `bytes` object,
-    #  - a `str` object,
+    #  - a `str` object (PY2) / a `bytes` object (PY3),
+    #  - a `unicode` object (PY2) / a `str` object (PY3),
     #  - a file-like object with its `read` method returning `str`,
     #  - a file-like object with its `read` method returning `unicode`.
 
     # Yeah, it's ugly and slow.
 
-    def __init__(self, stream: Any, loader: Any = None) -> None:
+    def __init__(self, stream, loader=None):
+        # type: (Any, Any) -> None
         self.loader = loader
         if self.loader is not None and getattr(self.loader, '_reader', None) is None:
             self.loader._reader = self
         self.reset_reader()
-        self.stream: Any = stream  # as .read is called
+        self.stream = stream  # type: Any  # as .read is called
 
-    def reset_reader(self) -> None:
-        self.name: Any = None
+    def reset_reader(self):
+        # type: () -> None
+        self.name = None  # type: Any
         self.stream_pointer = 0
         self.eof = True
         self.buffer = ""
         self.pointer = 0
-        self.raw_buffer: Any = None
+        self.raw_buffer = None  # type: Any
         self.raw_decode = None
-        self.encoding: Optional[Text] = None
+        self.encoding = None  # type: Optional[Text]
         self.index = 0
         self.line = 0
         self.column = 0
 
     @property
-    def stream(self) -> Any:
+    def stream(self):
+        # type: () -> Any
         try:
             return self._stream
         except AttributeError:
-            raise YAMLStreamError('input stream needs to be specified')
+            raise YAMLStreamError('input stream needs to specified')
 
     @stream.setter
-    def stream(self, val: Any) -> None:
+    def stream(self, val):
+        # type: (Any) -> None
         if val is None:
             return
         self._stream = None
-        if isinstance(val, str):
+        if isinstance(val, text_type):
             self.name = '<unicode string>'
             self.check_printable(val)
-            self.buffer = val + '\0'
-        elif isinstance(val, bytes):
+            self.buffer = val + u'\0'  # type: ignore
+        elif isinstance(val, binary_type):
             self.name = '<byte string>'
             self.raw_buffer = val
             self.determine_encoding()
@@ -117,49 +129,54 @@ class Reader:
             self.raw_buffer = None
             self.determine_encoding()
 
-    def peek(self, index: int = 0) -> Text:
+    def peek(self, index=0):
+        # type: (int) -> Text
         try:
             return self.buffer[self.pointer + index]
         except IndexError:
             self.update(index + 1)
             return self.buffer[self.pointer + index]
 
-    def prefix(self, length: int = 1) -> Any:
+    def prefix(self, length=1):
+        # type: (int) -> Any
         if self.pointer + length >= len(self.buffer):
             self.update(length)
         return self.buffer[self.pointer : self.pointer + length]
 
-    def forward_1_1(self, length: int = 1) -> None:
+    def forward_1_1(self, length=1):
+        # type: (int) -> None
         if self.pointer + length + 1 >= len(self.buffer):
             self.update(length + 1)
         while length != 0:
             ch = self.buffer[self.pointer]
             self.pointer += 1
             self.index += 1
-            if ch in '\n\x85\u2028\u2029' or (
-                ch == '\r' and self.buffer[self.pointer] != '\n'
+            if ch in u'\n\x85\u2028\u2029' or (
+                ch == u'\r' and self.buffer[self.pointer] != u'\n'
             ):
                 self.line += 1
                 self.column = 0
-            elif ch != '\uFEFF':
+            elif ch != u'\uFEFF':
                 self.column += 1
             length -= 1
 
-    def forward(self, length: int = 1) -> None:
+    def forward(self, length=1):
+        # type: (int) -> None
         if self.pointer + length + 1 >= len(self.buffer):
             self.update(length + 1)
         while length != 0:
             ch = self.buffer[self.pointer]
             self.pointer += 1
             self.index += 1
-            if ch == '\n' or (ch == '\r' and self.buffer[self.pointer] != '\n'):
+            if ch == u'\n' or (ch == u'\r' and self.buffer[self.pointer] != u'\n'):
                 self.line += 1
                 self.column = 0
-            elif ch != '\uFEFF':
+            elif ch != u'\uFEFF':
                 self.column += 1
             length -= 1
 
-    def get_mark(self) -> Any:
+    def get_mark(self):
+        # type: () -> Any
         if self.stream is None:
             return StringMark(
                 self.name, self.index, self.line, self.column, self.buffer, self.pointer
@@ -167,10 +184,11 @@ class Reader:
         else:
             return FileMark(self.name, self.index, self.line, self.column)
 
-    def determine_encoding(self) -> None:
+    def determine_encoding(self):
+        # type: () -> None
         while not self.eof and (self.raw_buffer is None or len(self.raw_buffer) < 2):
             self.update_raw()
-        if isinstance(self.raw_buffer, bytes):
+        if isinstance(self.raw_buffer, binary_type):
             if self.raw_buffer.startswith(codecs.BOM_UTF16_LE):
                 self.raw_decode = codecs.utf_16_le_decode  # type: ignore
                 self.encoding = 'utf-16-le'
@@ -182,15 +200,25 @@ class Reader:
                 self.encoding = 'utf-8'
         self.update(1)
 
-    NON_PRINTABLE = RegExp(
-        '[^\x09\x0A\x0D\x20-\x7E\x85' '\xA0-\uD7FF' '\uE000-\uFFFD' '\U00010000-\U0010FFFF' ']'
-    )
+    if UNICODE_SIZE == 2:
+        NON_PRINTABLE = RegExp(
+            u'[^\x09\x0A\x0D\x20-\x7E\x85' u'\xA0-\uD7FF' u'\uE000-\uFFFD' u']'
+        )
+    else:
+        NON_PRINTABLE = RegExp(
+            u'[^\x09\x0A\x0D\x20-\x7E\x85'
+            u'\xA0-\uD7FF'
+            u'\uE000-\uFFFD'
+            u'\U00010000-\U0010FFFF'
+            u']'
+        )
 
     _printable_ascii = ('\x09\x0A\x0D' + "".join(map(chr, range(0x20, 0x7F)))).encode('ascii')
 
     @classmethod
-    def _get_non_printable_ascii(cls: Text, data: bytes) -> Optional[Tuple[int, Text]]:  # type: ignore # NOQA
-        ascii_bytes = data.encode('ascii')  # type: ignore
+    def _get_non_printable_ascii(cls, data):  # type: ignore
+        # type: (Text, bytes) -> Optional[Tuple[int, Text]]
+        ascii_bytes = data.encode('ascii')
         non_printables = ascii_bytes.translate(None, cls._printable_ascii)  # type: ignore
         if not non_printables:
             return None
@@ -198,20 +226,23 @@ class Reader:
         return ascii_bytes.index(non_printable), non_printable.decode('ascii')
 
     @classmethod
-    def _get_non_printable_regex(cls, data: Text) -> Optional[Tuple[int, Text]]:
+    def _get_non_printable_regex(cls, data):
+        # type: (Text) -> Optional[Tuple[int, Text]]
         match = cls.NON_PRINTABLE.search(data)
         if not bool(match):
             return None
         return match.start(), match.group()
 
     @classmethod
-    def _get_non_printable(cls, data: Text) -> Optional[Tuple[int, Text]]:
+    def _get_non_printable(cls, data):
+        # type: (Text) -> Optional[Tuple[int, Text]]
         try:
             return cls._get_non_printable_ascii(data)  # type: ignore
         except UnicodeEncodeError:
             return cls._get_non_printable_regex(data)
 
-    def check_printable(self, data: Any) -> None:
+    def check_printable(self, data):
+        # type: (Any) -> None
         non_printable_match = self._get_non_printable(data)
         if non_printable_match is not None:
             start, character = non_printable_match
@@ -224,7 +255,8 @@ class Reader:
                 'special characters are not allowed',
             )
 
-    def update(self, length: int) -> None:
+    def update(self, length):
+        # type: (int) -> None
         if self.raw_buffer is None:
             return
         self.buffer = self.buffer[self.pointer :]
@@ -236,7 +268,10 @@ class Reader:
                 try:
                     data, converted = self.raw_decode(self.raw_buffer, 'strict', self.eof)
                 except UnicodeDecodeError as exc:
-                    character = self.raw_buffer[exc.start]
+                    if PY3:
+                        character = self.raw_buffer[exc.start]
+                    else:
+                        character = exc.object[exc.start]
                     if self.stream is not None:
                         position = self.stream_pointer - len(self.raw_buffer) + exc.start
                     elif self.stream is not None:
@@ -255,9 +290,10 @@ class Reader:
                 self.raw_buffer = None
                 break
 
-    def update_raw(self, size: Optional[int] = None) -> None:
+    def update_raw(self, size=None):
+        # type: (Optional[int]) -> None
         if size is None:
-            size = 4096
+            size = 4096 if PY3 else 1024
         data = self.stream.read(size)
         if self.raw_buffer is None:
             self.raw_buffer = data
