@@ -8,7 +8,9 @@ Integrates with TownyAdvanced for town-based shop restrictions and LuckPerms
 for permission control.
 """
 import os  # Standard library imports FIRST
-import yaml
+import sys
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib")) # Add to Python import path
+from ruamel import yaml
 
 from spigotmc import (  # spigotmc imports next - Grouped and broken into lines
     plugin,
@@ -58,66 +60,66 @@ def load_config():
             "enable_vault_integration": True
         }
     }
-
+    yaml_loader = yaml.YAML() # Create a ruamel.yaml.YAML instance
     if not os.path.exists(config_file_path):  # Check if config.yml file exists
-        print("[SimpleChestShop] config.yml not found, creating default...") # Added parentheses back to print - Python 2.7 and 3 compatible
+        print "[SimpleChestShop] config.yml not found, creating default..." # Added parentheses back to print - Python 2.7 and 3 compatible
         config = default_config  # Use the default config
         with open(config_file_path, "w") as config_file:  # Renamed 'f' to 'config_file'
-            yaml.dump(default_config, config_file, indent=2)  # Save default config to file
+           yaml_loader.dump(default_config, config_file)  # Use the dump method from our YAML instance
     else:
         try:
             with open(config_file_path, "r") as config_file:  # Renamed 'f' to 'config_file'
-                config = yaml.safe_load(config_file)
+                config = yaml_loader.load(config_file) # use the load method from our YAML instance
         except FileNotFoundError:  # Catch specific FileNotFoundError
-            print("[SimpleChestShop] config.yml not found, creating default...")  # Added parentheses back to print - Python 2.7 and 3 compatible
+            print "[SimpleChestShop] config.yml not found, creating default..."  # Added parentheses back to print - Python 2.7 and 3 compatible
             config = default_config
             with open(config_file_path, "w") as config_file:  # Renamed 'f' to 'config_file'
-                yaml.dump(default_config, config_file, indent=2)
+                yaml_loader.dump(default_config, config_file)
         except yaml.YAMLError, exception:  # Catch specific yaml.YAMLError for YAML parsing errors # Renamed 'e' to 'exception' # Python 2.7 syntax for except
-            print("[SimpleChestShop] Error parsing config.yml (YAML error): {}".format(exception))  # Use .format() for Python 2.7 # Added parentheses back to print - Python 2.7 and 3 compatible
-            print("[SimpleChestShop] Using default configuration.")  # Added parentheses back to print - Python 2.7 and 3 compatible
+            print "[SimpleChestShop] Error parsing config.yml (YAML error): {}".format(exception)  # Use .format() for Python 2.7 # Added parentheses back to print - Python 2.7 and 3 compatible
+            print "[SimpleChestShop] Using default configuration."  # Added parentheses back to print - Python 2.7 and 3 compatible
             config = default_config
         except Exception, exception:  # Catch any *other* unexpected exceptions (still broad, but less so) # Renamed 'e' to 'exception' # Python 2.7 syntax for except
-            print("[SimpleChestShop] Unexpected error loading config.yml: {}".format(exception))  # Use .format() for Python 2.7 # Added parentheses back to print - Python 2.7 and 3 compatible
-            print("[SimpleChestShop] Using default configuration.")  # Added parentheses back to print - Python 2.7 and 3 compatible
+            print "[SimpleChestShop] Unexpected error loading config.yml: {}".format(exception)  # Use .format() for Python 2.7 # Added parentheses back to print - Python 2.7 and 3 compatible
+            print "[SimpleChestShop] Using default configuration."  # Added parentheses back to print - Python 2.7 and 3 compatible
             config = default_config
 
     # After loading (or creating) config, merge defaults to ensure all settings exist
     config = dict(default_config.items() + (config or {}).items())  # Python 2.7 dict merge - slightly different syntax
 
-    print("[SimpleChestShop] Configuration loaded.")  # Indicate config loading is complete # Added parentheses back to print - Python 2.7 and 3 compatible
+    print "[SimpleChestShop] Configuration loaded."  # Indicate config loading is complete # Added parentheses back to print - Python 2.7 and 3 compatible
     if config.get("settings", {}).get("debug_mode", False):  # Example of using debug_mode from config
-        print("[SimpleChestShop] Debug mode is enabled.")  # Added parentheses back to print - Python 2.7 and 3 compatible
+        print "[SimpleChestShop] Debug mode is enabled."  # Added parentheses back to print - Python 2.7 and 3 compatible
 
 
-def get_vault_economy():  # New function to get Vault Economy service
+def get_vault_economy():
     """Retrieves the Vault economy service."""
     global VAULT_ECONOMY, VAULT_ENABLED
     if not config.get("vault", {}).get("enable_vault_integration", True):  # Check if Vault integration is enabled in config
-        print("[SimpleChestShop] Vault integration is disabled in config.") # Added parentheses back to print - Python 2.7 and 3 compatible
+        print "[SimpleChestShop] Vault integration is disabled in config."  # Added parentheses back to print - Python 2.7 and 3 compatible
         VAULT_ENABLED = False
         return None  # Vault integration disabled
 
     if server.getPluginManager().getPlugin("Vault") is None:  # Correctly using 'server'
-        print("[SimpleChestShop] Vault plugin not found! Disabling Vault integration.") # Added parentheses back to print - Python 2.7 and 3 compatible
+        print "[SimpleChestShop] Vault plugin not found! Disabling Vault integration."  # Added parentheses back to print - Python 2.7 and 3 compatible
         VAULT_ENABLED = False
         return None  # Vault not found
 
     rsp = server.getServicesManager().getRegistration(Economy)  # Correctly using 'server'
 
     if rsp is None:  # Check if Economy service is registered
-        print("[SimpleChestShop] Vault Economy service not found! Disabling Vault integration.") # Added parentheses back to print - Python 2.7 and 3 compatible
+        print "[SimpleChestShop] Vault Economy service not found! Disabling Vault integration."  # Added parentheses back to print - Python 2.7 and 3 compatible
         VAULT_ENABLED = False
         return None  # Economy service not found
 
     VAULT_ECONOMY = rsp.getProvider()  # Get the Economy provider
     if VAULT_ECONOMY is not None:
         VAULT_ENABLED = True
-        print("[SimpleChestShop] Vault integration enabled. Economy provider: {}".format(VAULT_ECONOMY.getName()))  # Use .format() for Python 2.7 # Added parentheses back to print - Python 2.7 and 3 compatible
+        print "[SimpleChestShop] Vault integration enabled. Economy provider: {}".format(VAULT_ECONOMY.getName())  # Use .format() for Python 2.7 # Added parentheses back to print - Python 2.7 and 3 compatible
         return VAULT_ECONOMY
 
     # No 'else' needed here!  If we reach this point, it means the 'if' condition was false.
-    print("[SimpleChestShop] Failed to get Vault Economy provider! Disabling Vault integration.")  # Corrected line break (though not strictly needed here) # Added parentheses back to print - Python 2.7 and 3 compatible
+    print "[SimpleChestShop] Failed to get Vault Economy provider! Disabling Vault integration."  # Corrected line break (though not strictly needed here) # Added parentheses back to print - Python 2.7 and 3 compatible
     VAULT_ENABLED = False
     return None
 
@@ -129,7 +131,7 @@ def is_in_town(location):
     try:
         return TownyUniverse.getInstance().getTownBlock(location).hasTown()  # Use hasTown() instead of is not None
     except Exception, exception:  # Catch general Exception for Towny API errors (consider more specific if you know the type) # Renamed 'e' to 'exception' # Python 2.7 syntax for except
-        print("[SimpleChestShop] Error checking Towny location: {}".format(exception))  # Use .format() for Python 2.7 # Added parentheses back to print - Python 2.7 and 3 compatible
+        print "[SimpleChestShop] Error checking Towny location: {}".format(exception)  # Use .format() for Python 2.7 # Added parentheses back to print - Python 2.7 and 3 compatible
         return False
 
 
@@ -196,9 +198,9 @@ class SimpleChestShopPlugin:
     def on_enable(self):
         """Called when the plugin is enabled."""
         load_config()  # Load the configuration when the plugin starts
-        print "[SimpleChestShop] Plugin enabled!" # Added parentheses back to print - Python 2.7 and 3 compatible
+        print "[SimpleChestShop] Plugin enabled!" # Python 2.7 print statement (no parentheses)
         get_vault_economy()  # Call get_vault_economy() on plugin enable to detect and get Vault
 
     def on_disable(self):
         """Called when the plugin is disabled."""
-        print "[SimpleChestShop] Plugin disabled!" # Added parentheses back to print - Python 2.7 and 3 compatible
+        print "[SimpleChestShop] Plugin disabled!" # Python 2.7 print statement (no parentheses)
