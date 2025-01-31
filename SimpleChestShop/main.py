@@ -8,10 +8,6 @@ Integrates with TownyAdvanced for town-based shop restrictions and LuckPerms
 for permission control.
 """
 import os  # Standard library imports FIRST
-import sys
-
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))  # Add to Python import path
-from ruamel import yaml  # Correct import for ruamel.yaml
 
 from spigotmc import (  # spigotmc imports next - Grouped and broken into lines
     plugin,
@@ -31,97 +27,53 @@ from org.bukkit import (  # org.bukkit imports last - Grouped and broken into li
 
 
 # --- Configuration ---
-config = {}  # Global configuration dictionary - Correct variable name style
-VAULT_ENABLED = False  # Global flag to track if Vault is enabled (RENAMED to UPPER_CASE)
-VAULT_ECONOMY = None  # Global variable to store the Vault Economy service (RENAMED to UPPER_CASE)
-
-
-def load_config():
-    """Loads the plugin configuration from config.yml or creates a default config if not found."""
-    global config
-    config_file_path = "plugins/PySpigot/scripts/SimpleChestShop/config.yml"
-    default_config = {  # Define our default configuration as a Python dictionary
-        "settings": {
-            "enable_shop_creation": True,
-            "debug_mode": False
-        },
-        "messages": {
-            "shop_detected": "§a[Shop] System: Shop sign detected and enabled!",
-            "no_shop_permission": "§c[Shop] System: You do not have permission to create shops."
-        },
-        "towny": {
-            "enable_towny_integration": True,
-            "require_town": False
-        },
-        "permissions": {
-            "enable_permissions": True,
-            "create_shop_permission": "chestshop.create"
-        },
-        "vault": {
-            "enable_vault_integration": True
-        }
-    }
-    yaml_loader = yaml.YAML() # Create a ruamel.yaml.YAML instance
-    if not os.path.exists(config_file_path):  # Check if config.yml file exists
-        print "[SimpleChestShop] config.yml not found, creating default..."  # Python 2.7 print statement (no parentheses)
-        config = default_config  # Use the default config
-        with open(config_file_path, "w") as config_file:  # Renamed 'f' to 'config_file'
-            yaml_loader.dump(default_config, config_file)  # Use the dump method from our YAML instance
-    else:
-        try:
-            with open(config_file_path, "r") as config_file:  # Renamed 'f' to 'config_file'
-                config = yaml_loader.load(config_file)  # use the load method from our YAML instance
-        except FileNotFoundError:  # Catch specific FileNotFoundError
-            print "[SimpleChestShop] config.yml not found, creating default..."  # Python 2.7 print statement (no parentheses)
-            config = default_config
-            with open(config_file_path, "w") as config_file:  # Renamed 'f' to 'config_file'
-                yaml_loader.dump(default_config, config_file)
-        except yaml.YAMLError, exception:  # Catch specific yaml.YAMLError for YAML parsing errors # Renamed 'e' to 'exception' # Python 2.7 syntax for except
-            print "[SimpleChestShop] Error parsing config.yml (YAML error): {}".format(exception)  # Use .format() for Python 2.7 # Python 2.7 print statement (no parentheses)
-            print "[SimpleChestShop] Using default configuration."  # Python 2.7 print statement (no parentheses)
-            config = default_config
-        except Exception, exception:  # Catch any *other* unexpected exceptions (still broad, but less so) # Renamed 'e' to 'exception' # Python 2.7 syntax for except
-            print "[SimpleChestShop] Unexpected error loading config.yml: {}".format(exception)  # Use .format() for Python 2.7 # Python 2.7 print statement (no parentheses)
-            print "[SimpleChestShop] Using default configuration."  # Python 2.7 print statement (no parentheses)
-            config = default_config
-
-    # After loading (or creating) config, merge defaults to ensure all settings exist
-    config = dict(default_config.items() + (config or {}).items())  # Python 2.7 dict merge - slightly different syntax
-
-    print "[SimpleChestShop] Configuration loaded."  # Indicate config loading is complete # Python 2.7 print statement (no parentheses)
-    if config.get("settings", {}).get("debug_mode", False):  # Example of using debug_mode from config
-        print "[SimpleChestShop] Debug mode is enabled."  # Python 2.7 print statement (no parentheses)
-
+# We now remove the config loading, so all are hard coded.
+VAULT_ENABLED = True  # Global flag to track if Vault is enabled (RENAMED to UPPER_CASE)
+VAULT_ECONOMY = None   # Global variable to store the Vault Economy service (RENAMED to UPPER_CASE)
+ENABLE_SHOP_CREATION = True
+DEBUG_MODE = False
+SHOP_DETECTED_MESSAGE = "§a[Shop] System: Shop sign detected and enabled!"
+NO_SHOP_PERMISSION_MESSAGE = "§c[Shop] System: You do not have permission to create shops."
+SHOP_MUST_BE_IN_TOWN_MESSAGE = "§c[Shop] System: Shops can only be created within town boundaries."
+ENABLE_TOWNY_INTEGRATION = True
+REQUIRE_TOWN = False
+ENABLE_PERMISSIONS = True
+CREATE_SHOP_PERMISSION = "chestshop.create"
+CURRENCY_SYMBOL = "$"
+SHOP_BOUGHT_ITEM = "§a[Shop] System: You bought {quantity} {item_name} for {price}."
+SHOP_SOLD_ITEM = "§a[Shop] System: You sold {quantity} {item_name} for {price}."
+SHOP_NO_MONEY = "§c[Shop] System: You do not have enough money to do that!"
+SHOP_NO_ITEMS = "§c[Shop] System: You do not have the required items for that!"
 
 def get_vault_economy():
     """Retrieves the Vault economy service."""
     global VAULT_ECONOMY, VAULT_ENABLED
-    if not config.get("vault", {}).get("enable_vault_integration", True):  # Check if Vault integration is enabled in config
-        print "[SimpleChestShop] Vault integration is disabled in config."  # Python 2.7 print statement (no parentheses)
-        VAULT_ENABLED = False
+
+    if not VAULT_ENABLED:
+        print "[SimpleChestShop] Vault integration is disabled in config." # Python 2.7 print statement (no parentheses)
         return None  # Vault integration disabled
 
-    if server.getPluginManager().getPlugin("Vault") is None:  # Correctly using 'server'
-        print "[SimpleChestShop] Vault plugin not found! Disabling Vault integration."  # Python 2.7 print statement (no parentheses)
+    if server.getPluginManager().getPlugin("Vault") is None:
+        print "[SimpleChestShop] Vault plugin not found! Disabling Vault integration." # Python 2.7 print statement (no parentheses)
         VAULT_ENABLED = False
         return None  # Vault not found
 
-    rsp = server.getServicesManager().getRegistration(Economy)  # Correctly using 'server'
+    rsp = server.getServicesManager().getRegistration(Economy)
 
-    if rsp is None:  # Check if Economy service is registered
-        print "[SimpleChestShop] Vault Economy service not found! Disabling Vault integration."  # Python 2.7 print statement (no parentheses)
+    if rsp is None:
+        print "[SimpleChestShop] Vault Economy service not found! Disabling Vault integration." # Python 2.7 print statement (no parentheses)
         VAULT_ENABLED = False
         return None  # Economy service not found
 
-    VAULT_ECONOMY = rsp.getProvider()  # Get the Economy provider
+    VAULT_ECONOMY = rsp.getProvider()
     if VAULT_ECONOMY is not None:
         VAULT_ENABLED = True
-        print "[SimpleChestShop] Vault integration enabled. Economy provider: {}".format(VAULT_ECONOMY.getName())  # Use .format() for Python 2.7 # Python 2.7 print statement (no parentheses)
+        print "[SimpleChestShop] Vault integration enabled. Economy provider: {}".format(VAULT_ECONOMY.getName()) # Python 2.7 print statement (no parentheses)
         return VAULT_ECONOMY
 
     # No 'else' needed here!  If we reach this point, it means the 'if' condition was false.
-    print "[SimpleChestShop] Failed to get Vault Economy provider! Disabling Vault integration."  # Corrected line break (though not strictly needed here) # Python 2.7 print statement (no parentheses)
-        VAULT_ENABLED = False
+    print "[SimpleChestShop] Failed to get Vault Economy provider! Disabling Vault integration." # Python 2.7 print statement (no parentheses)
+    VAULT_ENABLED = False
     return None
 
 
@@ -146,38 +98,28 @@ def on_sign_change(event):
     location = event.getBlock().getLocation()
 
     if lines[0].lower() == "[shop]":
-        if config.get("permissions", {}).get("enable_permissions", True):  # Check if permission checks are enabled
-            create_perm = config.get("permissions", {}).get("create_shop_permission",
-                                                            "chestshop.create")  # Get permission node from config
+        if ENABLE_PERMISSIONS:  # Check if permission checks are enabled
+            create_perm = CREATE_SHOP_PERMISSION  # Get permission node from config
             if not player.hasPermission(create_perm):  # Check if player has the create shop permission
-                message = config.get("messages", {}).get("no_shop_permission",
-                                                        "§c[Shop] System: You do not have permission to create shops.")
-                player.sendMessage(message)
+                print NO_SHOP_PERMISSION_MESSAGE  # Python 2.7 print statement (no parentheses)
+                player.sendMessage(NO_SHOP_PERMISSION_MESSAGE)
                 event.setCancelled(True)  # Cancel sign creation
                 return  # Stop processing
 
-        if not config.get(  # Corrected indentation - Added 1 space for continued line
-                "towny", {}
-        ).get(
-                "enable_towny_integration",
-                True
-        ):
+        if not ENABLE_TOWNY_INTEGRATION:
             pass
-        elif config.get("towny", {}).get("require_town", False):
+        elif REQUIRE_TOWN:
             if not is_in_town(location):  # Corrected indentation - Removed extra indentation
-                message = config.get("messages", {}).get("shop_must_be_in_town",  # Corrected indentation - Removed extra indentation
-                                                        "§c[Shop] System: Shops can only be created within town boundaries.")
+                message = SHOP_MUST_BE_IN_TOWN_MESSAGE  # Get the message.
                 player.sendMessage(message)
                 event.setCancelled(True)
                 return
 
-        if config.get("settings", {}).get("enable_shop_creation", True):  # Check if shop creation is enabled in general
-            message = config.get("messages", {}).get("shop_detected", "§a[Shop] System: Shop sign detected and enabled!")
-            player.sendMessage(message)
+        if ENABLE_SHOP_CREATION:  # Check if shop creation is enabled in general
+            player.sendMessage(SHOP_DETECTED_MESSAGE)
         else:
             player.sendMessage("§c[Shop] System: Shop creation is currently disabled by the server.")
             event.setCancelled(True)
-
 
 @event("player.PlayerInteractEvent")
 def on_player_interact(event):
@@ -198,7 +140,6 @@ class SimpleChestShopPlugin:
 
     def on_enable(self):
         """Called when the plugin is enabled."""
-        load_config()  # Load the configuration when the plugin starts
         print "[SimpleChestShop] Plugin enabled!"  # Python 2.7 print statement (no parentheses)
         get_vault_economy()  # Call get_vault_economy() on plugin enable to detect and get Vault
 
