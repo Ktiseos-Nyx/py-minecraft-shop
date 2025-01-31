@@ -1,34 +1,22 @@
-# SimpleChestShop Configuration
+# Configuration file for SimpleChestShop plugin
 
-settings:
-  enable_shop_creation: true
-  debug_mode: false
+# Material to be used for shop chests.
+# Default is CHEST. You can change this to other chest-like materials
+# (e.g., TRAPPED_CHEST, BARREL) if desired.
+# Make sure to use valid Bukkit Material names (all uppercase, underscores for spaces).
+shop_chest_material: CHEST
 
-messages:
-  shop_detected: "§a[Shop] System: Shop sign detected and enabled!"
-  no_shop_permission: "§c[Shop] System: You do not have permission to create shops."
-  shop_must_be_in_town: "§c[Shop] System: Shops can only be created within town boundaries."
+# Text that should be present on a sign attached to a shop chest
+# to identify it as a shop.
+# Default is "[Shop]".  You can change this to something else.
+# This feature (sign detection) is not yet fully implemented in the plugin,
+# but this setting will be used when sign detection is added.
+shop_identifier_sign_text: "[Shop]"
 
-towny:
-  enable_towny_integration: true
-  require_town: false
+# --- Future Configuration Options (Not yet implemented in the plugin) ---
+# Example of potential future configuration options you might add:
 
-permissions:
-  enable_permissions: true
-  create_shop_permission: "chestshop.create"
-
-vault:
-  enable_vault_integration: true # Master switch for Vault integration
-
-  # Add more Vault settings here later
-
-  # Add more permissions here as we develop the plugin
-
-  # Add more settings here as we develop the plugin
-
-  # Add more insanity as y'all learn I dont know how to code LMAO. I'm just a writer.
-
-
-  # Add more Towny settings here later
-
-  # Add more messages here as we develop the plugin
+# shop_currency_type: "EMERALD"  # Example: Currency for shops (EMERALD, DIAMOND, etc.)
+# default_buy_price: 10         # Example: Default buy price for new shops
+# default_sell_price: 5        # Example: Default sell price for new shops
+# allow_admin_shops: false      # Example: Allow admin-created shops?
