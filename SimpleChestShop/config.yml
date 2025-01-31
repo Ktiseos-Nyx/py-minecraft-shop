@@ -1,0 +1,22 @@
+# Configuration file for SimpleChestShop plugin
+
+# Material to be used for shop chests.
+# Default is CHEST. You can change this to other chest-like materials
+# (e.g., TRAPPED_CHEST, BARREL) if desired.
+# Make sure to use valid Bukkit Material names (all uppercase, underscores for spaces).
+shop_chest_material: CHEST
+
+# Text that should be present on a sign attached to a shop chest
+# to identify it as a shop.
+# Default is "[Shop]".  You can change this to something else.
+# This feature (sign detection) is not yet fully implemented in the plugin,
+# but this setting will be used when sign detection is added.
+shop_identifier_sign_text: "[Shop]"
+
+# --- Future Configuration Options (Not yet implemented in the plugin) ---
+# Example of potential future configuration options you might add:
+
+# shop_currency_type: "EMERALD"  # Example: Currency for shops (EMERALD, DIAMOND, etc.)
+# default_buy_price: 10         # Example: Default buy price for new shops
+# default_sell_price: 5        # Example: Default sell price for new shops
+# allow_admin_shops: false      # Example: Allow admin-created shops?
