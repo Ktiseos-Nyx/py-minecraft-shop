@@ -1,22 +1,14 @@
-# -*- coding: utf-8 -*-
-"""
-SimpleChestShop - A PySpigot plugin for creating simple chest shops in Minecraft.
-
-This plugin allows players to create chest shops by placing signs on chests,
-enabling item trading with other players using server currency (via Vault).
-Integrates with TownyAdvanced for town-based shop restrictions and LuckPerms
-for permission control.
-"""
+# coding=utf-8
 import os  # Standard library imports FIRST
 import pyspigot as ps  # Correct pyspigot import
 
-# Vault Imports (for Vault API)
-from net.milkbowl.vault.economy import Economy
-from com.palmergames.bukkit.towny import TownyUniverse
+# Third-party plugin API imports (Vault, Towny)
+from net.milkbowl.vault2.economy import Economy  # CORRECT Vault import (note 'vault2')
+from com.palmergames.bukkit.towny import TownyUniverse # Towny API
 
-#org bukkit imports
 from org.bukkit.plugin.java import JavaPlugin
-from org.bukkit.event.Listener import Listener
+from org.bukkit.event import Listener
+from org.bukkit.event import EventHandler
 from org.bukkit.event.player import PlayerInteractEvent
 from org.bukkit.event.block import BlockBreakEvent
 from org.bukkit.Material import Material
@@ -26,59 +18,66 @@ from org.bukkit.inventory import ItemStack
 from org.bukkit.inventory.meta import ItemMeta
 from org.bukkit.ChatColor import ChatColor
 from org.bukkit import Location
-from org.bukkit.block import Sign # Import Sign for future sign detection
+from org.bukkit.block import Sign
+from org.bukkit.command import Command # Import Command and CommandSender for command handling
+from org.bukkit.command import CommandSender
 
-import ruamel.yaml as yaml # Make sure ruamel.yaml is installed correctly in python-libs
+#Yaml Config
+import ruamel.yaml as yaml
 
-CONFIG_FILE = "config.yml" # Name of the configuration file
-SHOP_CHEST_MATERIAL_CONFIG_KEY = "shop_chest_material" # Key in config.yml for shop chest material
-SHOP_IDENTIFIER_SIGN_TEXT_CONFIG_KEY = "shop_identifier_sign_text" # Key for shop sign text
-DEFAULT_SHOP_CHEST_MATERIAL = Material.CHEST # Default material if not in config
-DEFAULT_SHOP_IDENTIFIER_SIGN_TEXT = "[Shop]" # Default sign text if not in config
+CONFIG_FILE = "config.yml"
+SHOP_CHEST_MATERIAL_CONFIG_KEY = "shop_chest_material"
+SHOP_IDENTIFIER_SIGN_TEXT_CONFIG_KEY = "shop_identifier_sign_text"
+DEFAULT_SHOP_CHEST_MATERIAL = Material.CHEST
+DEFAULT_SHOP_IDENTIFIER_SIGN_TEXT = "[Shop]"
 
 class ChestShop(JavaPlugin, Listener):
 
     def onEnable(self):
-        self.load_plugin_config() # Load configuration from config.yml
+        self.load_plugin_config()
         self.getServer().getPluginManager().registerEvents(self, self)
         self.getLogger().info("SimpleChestShop plugin enabled!")
         self.shop_locations = set() # Placeholder: Keep track of shop chest locations (not persistent yet)
         self.load_shop_locations() # Placeholder: Load saved shop locations (not implemented yet)
 
+        # --- Vault Economy Setup (Placeholder - Basic Initialization) ---
+        self.economy = self.setup_economy() # Try to setup Vault economy
+        if self.economy:
+            self.getLogger().info("Vault economy integration enabled (placeholder - not fully functional yet).")
+        else:
+            self.getLogger().warning("Vault economy provider not found. Economy features will be disabled.")
+
+
     def onDisable(self):
-        self.save_shop_locations() # Placeholder: Save shop locations (not implemented yet)
+        self.save_shop_locations()
         self.getLogger().info("SimpleChestShop plugin disabled!")
 
     def load_plugin_config(self):
-        """Loads the plugin configuration from config.yml using ruamel.yaml."""
         config_path = self.getDataFolder().getAbsolutePath() + "/" + CONFIG_FILE
         try:
             with open(config_path, 'r') as f:
                 config = yaml.YAML().load(f)
                 if not config:
-                    config = {} # Handle empty config file
+                    config = {}
         except IOError:
-            config = {} # Default to empty config if file not found
+            config = {}
 
-        # Load shop chest material from config, or use default
         material_name = config.get(SHOP_CHEST_MATERIAL_CONFIG_KEY, DEFAULT_SHOP_CHEST_MATERIAL.name())
         try:
-            self.shop_chest_material = Material.valueOf(material_name.upper()) # Convert config string to Material
+            self.shop_chest_material = Material.valueOf(material_name.upper())
         except ValueError:
-            self.shop_chest_material = DEFAULT_SHOP_CHEST_MATERIAL # Fallback to default if invalid material name in config
+            self.shop_chest_material = DEFAULT_SHOP_CHEST_MATERIAL
             self.getLogger().warning("Invalid shop_chest_material in config: '{}'. Using default: '{}'.".format(material_name, DEFAULT_SHOP_CHEST_MATERIAL.name()))
 
-        # Load shop identifier sign text from config, or use default
         self.shop_identifier_sign_text = config.get(SHOP_IDENTIFIER_SIGN_TEXT_CONFIG_KEY, DEFAULT_SHOP_IDENTIFIER_SIGN_TEXT)
 
-        self.config = config # Store the loaded config for potential future use (saving, etc.)
+        self.config = config
         self.getLogger().info("Configuration loaded from '{}'".format(CONFIG_FILE))
         self.getLogger().info("Shop chest material: '{}'".format(self.shop_chest_material.name()))
         self.getLogger().info("Shop identifier sign text: '{}'".format(self.shop_identifier_sign_text))
 
 
-    def save_config(self): # Method to save config (not currently used, but good to have)
-        """Saves the current configuration to config.yml."""
+    def save_config(self):
         config_path = self.getDataFolder().getAbsolutePath() + "/" + CONFIG_FILE
         with open(config_path, 'w') as f:
             yaml.YAML().dump(self.config, f)
@@ -86,81 +85,95 @@ class ChestShop(JavaPlugin, Listener):
 
 
     def load_shop_locations(self):
-        """Placeholder: Loads shop locations from persistent storage (not implemented yet)."""
-        # --- In a real plugin, you would load shop locations from config or a data file here ---
-        self.shop_locations = set() # Initialize as empty for now
+        self.shop_locations = set()
         self.getLogger().info("Shop locations loaded (placeholder - not persistent).")
 
     def save_shop_locations(self):
-        """Placeholder: Saves shop locations to persistent storage (not implemented yet)."""
-        # --- In a real plugin, you would save shop locations to config or a data file here ---
         self.getLogger().info("Shop locations saved (placeholder - not persistent).")
 
     def is_shop_chest(self, block):
-        """
-        Checks if a given block is a shop chest.
-        Currently, this is a placeholder and simply checks if the block's material matches the configured shop chest material.
-        In a real implementation, you would check for an attached sign with the shop identifier text,
-        or use other methods to identify shop chests.
-        """
         if block.getType() == self.shop_chest_material:
-            # --- Future: Check for a sign attached to the chest with self.shop_identifier_sign_text ---
-            # --- Sign checking logic would go here (more complex, not implemented in this basic example) ---
-            # --- For now, assume any chest of the configured material is a shop chest (for basic testing) ---
             return True
         return False
 
+    @EventHandler
     def onPlayerInteract(self, event):
-        """Handles player interactions with blocks (especially chests)."""
         action = event.getAction()
         block = event.getClickedBlock()
         player = event.getPlayer()
 
         if action == PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK and block.getType() == self.shop_chest_material:
             if self.is_shop_chest(block):
-                self.handle_shop_interaction(player, block) # Handle right-click interaction with a shop chest
+                self.handle_shop_interaction(player, block)
             else:
-                player.sendMessage(ChatColor.GRAY + "This is just a regular {}.".format(self.shop_chest_material.name().lower().replace('_', ' '))) # Indicate it's a regular chest
+                player.sendMessage(ChatColor.GRAY + "This is just a regular {}.".format(self.shop_chest_material.name().lower().replace('_', ' ')))
 
         elif action == PlayerInteractEvent.Action.LEFT_CLICK_BLOCK and block.getType() == self.shop_chest_material:
             if self.is_shop_chest(block):
-                self.handle_shop_break_attempt(player, block) # Handle left-click attempt to break a shop chest
+                self.handle_shop_break_attempt(player, block)
             else:
-                player.sendMessage(ChatColor.GRAY + "You left-clicked a regular {}.".format(self.shop_chest_material.name().lower().replace('_', ' '))) # Indicate it's a regular chest
+                player.sendMessage(ChatColor.GRAY + "You left-clicked a regular {}.".format(self.shop_chest_material.name().lower().replace('_', ' ')))
 
     def handle_shop_interaction(self, player, chest_block):
-        """Placeholder: Handles player interaction (right-click) with a shop chest."""
         location = chest_block.getLocation()
         player.sendMessage(ChatColor.GREEN + "Shop Interaction with chest at: " + str(location.getBlockX()) + ", " + str(location.getBlockY()) + ", " + str(location.getBlockZ()))
         player.sendMessage(ChatColor.YELLOW + "Shop interface would open here in a real chest shop plugin.")
-        # --- Implement shop interface (inventory GUI, item display, buying/selling) here ---
+        # --- Future: Implement shop interface (inventory GUI, item display, buying/selling) and Vault economy transactions here ---
 
     def handle_shop_break_attempt(self, player, chest_block):
-        """Handles player attempts to break a shop chest (left-click). Prevents breaking."""
         player.sendMessage(ChatColor.RED + ChatColor.BOLD + "You cannot break shop chests directly!")
         player.sendMessage(ChatColor.RESET + ChatColor.GRAY + "Interact (right-click) to use the shop.")
-        # Breaking is prevented in the onBlockBreak event listener
 
+    @EventHandler
     def onBlockBreak(self, event):
-        """Listener for BlockBreakEvent. Prevents breaking of shop chests."""
         block = event.getBlock()
         player = event.getPlayer()
         if block.getType() == self.shop_chest_material:
             if self.is_shop_chest(block):
-                event.setCancelled(True) # Prevent breaking shop chests
+                event.setCancelled(True)
                 player.sendMessage(ChatColor.RED + ChatColor.BOLD + "You cannot break shop chests!")
-                player.sendMessage(ChatColor.RESET + ChatColor.GRAY + "Use /removeshop to remove a shop (command not yet implemented).") # Suggest shop removal command (future feature)
-            # else:  No message for breaking regular chests in onBlockBreak - let default behavior happen
+                player.sendMessage(ChatColor.RESET + ChatColor.GRAY + "Use /removeshop to remove a shop (command not yet implemented).")
 
 
-# --- Further Steps to Develop a Real Chest Shop Plugin (Beyond Basic Fixes - Reminder) ---
-# 1. Shop Identification: Implement robust shop chest identification (e.g., signs, metadata).
-# 2. Shop Creation:  Commands or methods for players to create shops (set buy/sell items, prices).
-# 3. Shop Data Storage: Store shop information (location, items, prices) persistently (config file, database).
-# 4. Shop Inventory GUI: Create a user-friendly inventory interface for buying/selling.
-# 5. Transaction Handling: Implement secure and reliable item and currency transactions.
-# 6. Permissions: Add permissions for shop creation, usage, admin commands.
-# 7. Configuration: Make various aspects configurable (shop material, sign text, prices, etc.) - basic config loading is now in place.
-# 8. Error Handling and Edge Cases:  Handle potential errors gracefully (e.g., insufficient funds, invalid items).
-# 9. Security:  Consider security aspects (preventing exploits, griefing).
-# 10. Testing and Refinement: Thoroughly test the plugin and refine features based on testing and feedback.
+    # --- Vault Economy Setup (Placeholder Function) ---
+    def setup_economy(self):
+        """Sets up Vault economy integration if Vault is available."""
+        if self.getServer().getPluginManager().getPlugin("Vault") == None:
+            return False
+        rsp = self.getServer().getServicesManager().getRegistration(Economy.class)
+        if rsp == None:
+            return False
+        self.getLogger().info("Vault Economy service found: {}".format(rsp.getProvider().getName())) # Log Vault provider
+        return rsp.getProvider()
+
+
+    # --- Command Handling for /removeshop ---
+    def onCommand(self, sender, command, label, args):
+        if command.getName().lower() == "removeshop":
+            return self.handle_removeshop_command(sender, args) # Call handler for /removeshop command
+        return False # Return false if command is not handled
+
+
+    def handle_removeshop_command(self, sender, args):
+        """Handles the /removeshop command."""
+        if not isinstance(sender, Player): # Command can only be used by players
+            sender.sendMessage(ChatColor.RED + "This command can only be used by players in-game.")
+            return True
+
+        player = sender
+        target_block = player.getTargetBlock(None, 5) # Get block player is looking at within 5 blocks range
+
+        if not target_block or target_block.getType() != self.shop_chest_material:
+            player.sendMessage(ChatColor.RED + "You must be looking at a shop chest to use /removeshop.")
+            return True
+
+        location = target_block.getLocation()
+        if location in self.shop_locations: # Check if it's registered as a shop (using placeholder shop_locations set)
+            self.shop_locations.remove(location) # Remove from shop locations (placeholder removal)
+            player.sendMessage(ChatColor.GREEN + "Shop removed at location: " + str(location.getBlockX()) + ", " + str(location.getBlockY()) + ", " + str(location.getBlockZ()))
+            # --- Future: Implement persistent removal of shop data (from config/data file) ---
+            # --- Future: Potentially refund items/money to shop owner if needed ---
+        else:
+            player.sendMessage(ChatColor.YELLOW + "The block you are looking at is not registered as a shop.")
+
+        return True # Command handled successfully
