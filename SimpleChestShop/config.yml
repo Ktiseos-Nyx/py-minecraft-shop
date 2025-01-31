@@ -8,6 +8,10 @@ messages:
   shop_detected: "§a[Shop] System: Shop sign detected and enabled!"
   no_shop_permission: "§c[Shop] System: You do not have permission to create shops."
   shop_must_be_in_town: "§c[Shop] System: Shops can only be created within town boundaries."
+  shop_bought_item: "§a[Shop] System: You bought {quantity} {item_name} for {price}."
+  shop_sold_item: "§a[Shop] System: You sold {quantity} {item_name} for {price}."
+  shop_no_money: "§c[Shop] System: You do not have enough money to do that!"
+  shop_no_items: "§c[Shop] System: You do not have the required items for that!"
 
 towny:
   enable_towny_integration: true
@@ -18,7 +22,10 @@ permissions:
   create_shop_permission: "chestshop.create"
 
 vault:
-  enable_vault_integration: true # Master switch for Vault integration
+  enable_vault_integration: true
+  currency_symbol: "$"
+  
+  # Master switch for Vault integration
 
   # Add more Vault settings here later
 
