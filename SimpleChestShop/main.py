@@ -8,28 +8,18 @@ Integrates with TownyAdvanced for town-based shop restrictions and LuckPerms
 for permission control.
 """
 import os  # Standard library imports FIRST
+import pyspigot as ps  # Correct pyspigot import
 
-from spigotmc import (  # spigotmc imports next - Grouped and broken into lines
-    plugin,
-    event,
-    Action,
-    Material
-)
-
-from com.palmergames.bukkit.towny import TownyUniverse  # com.palmergames imports next
-from net.milkbowl.vault.economy import Economy  # net.milkbowl imports next
-
-from org.bukkit import (  # org.bukkit imports last - Grouped and broken into lines
-    Material,
-    Action
-)
-# Removed: from org.bukkit.plugin import RegisteredServiceProvider - Unused import removed
-
+# Vault Imports (for Vault API)
+from net.milkbowl.vault.economy import Economy
+from com.palmergames.bukkit.towny import TownyUniverse
+from org.bukkit.entity import Player # Added Player from org.bukkit
+from org.bukkit import ChatColor # Added ChatColor from org.bukkit
 
 # --- Configuration ---
 # We now remove the config loading, so all are hard coded.
-VAULT_ENABLED = True  # Global flag to track if Vault is enabled (RENAMED to UPPER_CASE)
-VAULT_ECONOMY = None   # Global variable to store the Vault Economy service (RENAMED to UPPER_CASE)
+VAULT_ENABLED = True
+VAULT_ECONOMY = None
 ENABLE_SHOP_CREATION = True
 DEBUG_MODE = False
 SHOP_DETECTED_MESSAGE = "§a[Shop] System: Shop sign detected and enabled!"
@@ -45,34 +35,34 @@ SHOP_SOLD_ITEM = "§a[Shop] System: You sold {quantity} {item_name} for {price}.
 SHOP_NO_MONEY = "§c[Shop] System: You do not have enough money to do that!"
 SHOP_NO_ITEMS = "§c[Shop] System: You do not have the required items for that!"
 
+
 def get_vault_economy():
     """Retrieves the Vault economy service."""
     global VAULT_ECONOMY, VAULT_ENABLED
-
     if not VAULT_ENABLED:
-        print "[SimpleChestShop] Vault integration is disabled in config." # Python 2.7 print statement (no parentheses)
+        print "[SimpleChestShop] Vault integration is disabled in config."
         return None  # Vault integration disabled
 
-    if server.getPluginManager().getPlugin("Vault") is None:
-        print "[SimpleChestShop] Vault plugin not found! Disabling Vault integration." # Python 2.7 print statement (no parentheses)
+    if ps.getServer().getPluginManager().getPlugin("Vault") is None:
+        print "[SimpleChestShop] Vault plugin not found! Disabling Vault integration."
         VAULT_ENABLED = False
         return None  # Vault not found
 
-    rsp = server.getServicesManager().getRegistration(Economy)
+    rsp = ps.getServer().getServicesManager().getRegistration(Economy)
 
     if rsp is None:
-        print "[SimpleChestShop] Vault Economy service not found! Disabling Vault integration." # Python 2.7 print statement (no parentheses)
+        print "[SimpleChestShop] Vault Economy service not found! Disabling Vault integration."
         VAULT_ENABLED = False
         return None  # Economy service not found
 
     VAULT_ECONOMY = rsp.getProvider()
     if VAULT_ECONOMY is not None:
         VAULT_ENABLED = True
-        print "[SimpleChestShop] Vault integration enabled. Economy provider: {}".format(VAULT_ECONOMY.getName()) # Python 2.7 print statement (no parentheses)
+        print "[SimpleChestShop] Vault integration enabled. Economy provider: {}".format(VAULT_ECONOMY.getName())
         return VAULT_ECONOMY
 
     # No 'else' needed here!  If we reach this point, it means the 'if' condition was false.
-    print "[SimpleChestShop] Failed to get Vault Economy provider! Disabling Vault integration." # Python 2.7 print statement (no parentheses)
+    print "[SimpleChestShop] Failed to get Vault Economy provider! Disabling Vault integration."
     VAULT_ENABLED = False
     return None
 
@@ -84,7 +74,7 @@ def is_in_town(location):
     try:
         return TownyUniverse.getInstance().getTownBlock(location).hasTown()  # Use hasTown() instead of is not None
     except Exception, exception:  # Catch general Exception for Towny API errors (consider more specific if you know the type) # Renamed 'e' to 'exception' # Python 2.7 syntax for except
-        print "[SimpleChestShop] Error checking Towny location: {}".format(exception)  # Use .format() for Python 2.7 # Python 2.7 print statement (no parentheses)
+        print "[SimpleChestShop] Error checking Towny location: {}".format(exception)
         return False
 
 
@@ -121,6 +111,7 @@ def on_sign_change(event):
             player.sendMessage("§c[Shop] System: Shop creation is currently disabled by the server.")
             event.setCancelled(True)
 
+
 @event("player.PlayerInteractEvent")
 def on_player_interact(event):
     """Handles player interaction events, specifically right-clicking chests."""
@@ -140,9 +131,10 @@ class SimpleChestShopPlugin:
 
     def on_enable(self):
         """Called when the plugin is enabled."""
-        print "[SimpleChestShop] Plugin enabled!"  # Python 2.7 print statement (no parentheses)
+        load_config()  # Load the configuration when the plugin starts
+        print "[SimpleChestShop] Plugin enabled!" # Python 2.7 print statement (no parentheses)
         get_vault_economy()  # Call get_vault_economy() on plugin enable to detect and get Vault
 
     def on_disable(self):
         """Called when the plugin is disabled."""
-        print "[SimpleChestShop] Plugin disabled!"  # Python 2.7 print statement (no parentheses)
+        print "[SimpleChestShop] Plugin disabled!" # Python 2.7 print statement (no parentheses)
