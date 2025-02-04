@@ -23,7 +23,9 @@ from org.bukkit import Command # Import Command and CommandSender for command ha
 from org.bukkit import CommandSender
 
 # I'll work on the YAML soon, the reason for the "DELETE" the classes is sometihng something: Since in java Material is directly a class not a file (unlike python) - So i'm assuming this is the same for the rest of them.
-#Yaml Config
+
+#Yaml Config - THIS MAY STILL BREAK, but i just want ot get the imports done correctly.
+
 import ruamel.yaml as yaml
 
 CONFIG_FILE = "config.yml"
