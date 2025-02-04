@@ -8,7 +8,7 @@ from com.palmergames.bukkit.towny import TownyUniverse # Towny API
 from org.bukkit import Bukkit
 from org.bukkit.plugin.java import JavaPlugin
 from org.bukkit.event import Listener
-from org.bukkit import EventHandler  # ... to this (remove ".event" after "org.bukkit")
+# from org.bukkit import EventHandler  <--- REMOVED EventHandler IMPORT (Not needed if not using decorators)
 from org.bukkit.event.player import PlayerInteractEvent
 from org.bukkit.event.block import BlockBreakEvent
 from org.bukkit import Material  # <----- CORRECTED IMPORT: from org.bukkit import Material (no ".Material")
@@ -33,7 +33,7 @@ class ChestShop(JavaPlugin, Listener):
 
     def onEnable(self):
         self.load_plugin_config_pyspigot() # Load config using Pyspigot ConfigManager
-        self.getServer().getPluginManager().registerEvents(self, self)
+        self.getServer().getPluginManager().registerEvents(self, self) # Register events (still needed)
         self.getLogger().info("SimpleChestShop plugin enabled!")
         self.shop_locations = set() # Placeholder: Keep track of shop chest locations (not persistent yet)
         self.load_shop_locations() # Placeholder: Load saved shop locations (not implemented yet)
@@ -84,8 +84,8 @@ class ChestShop(JavaPlugin, Listener):
             return True
         return False
 
-    @EventHandler
-    def onPlayerInteract(self, event):
+    # @EventHandler  <--- REMOVED THIS LINE
+    def onPlayerInteract(self, event): # Event handler method - NO @EventHandler decorator
         action = event.getAction()
         block = event.getClickedBlock()
         player = event.getPlayer()
@@ -112,8 +112,8 @@ class ChestShop(JavaPlugin, Listener):
         player.sendMessage(ChatColor.RED + ChatColor.BOLD + "You cannot break shop chests directly!")
         player.sendMessage(ChatColor.RESET + ChatColor.GRAY + "Interact (right-click) to use the shop.")
 
-    @EventHandler
-    def onBlockBreak(self, event):
+    # @EventHandler  <--- REMOVED THIS LINE
+    def onBlockBreak(self, event): # Event handler method - NO @EventHandler decorator
         block = event.getBlock()
         player = event.getPlayer()
         if block.getType() == self.shop_chest_material:
