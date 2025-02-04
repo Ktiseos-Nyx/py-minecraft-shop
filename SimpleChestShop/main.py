@@ -8,7 +8,7 @@ from com.palmergames.bukkit.towny import TownyUniverse # Towny API
 from org.bukkit import Bukkit
 from org.bukkit.plugin.java import JavaPlugin
 from org.bukkit.event import Listener
-from org.bukkit.event import EventHandler
+from org.bukkit import EventHandler  # ... to this (remove ".event" after "org.bukkit")
 from org.bukkit.event.player import PlayerInteractEvent
 from org.bukkit.event.block import BlockBreakEvent
 from org.bukkit import Material  # <----- CORRECTED IMPORT: from org.bukkit import Material (no ".Material")
