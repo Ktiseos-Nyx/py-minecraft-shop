@@ -1,32 +1,26 @@
 # coding=utf-8
 import os  # Standard library imports FIRST
-import pyspigot as ps  # Correct pyspigot import
 
 # Third-party plugin API imports (Vault, Towny)
 from net.milkbowl.vault2.economy import Economy  # CORRECT Vault import (note 'vault2')
 from com.palmergames.bukkit.towny import TownyUniverse # Towny API
 
-
-from org.bukkit import Listener
-from org.bukkit import EventHandler
-from org.bukkit import PlayerInteractEvent
-from org.bukkit import BlockBreakEvent
-from org.bukkit import Material
-from org.bukkit import Block
-from org.bukkit import Player
-from org.bukkit import ItemStack
-from org.bukkit import ItemMeta
-from org.bukkit import ChatColor
+from org.bukkit.plugin.java import JavaPlugin
+from org.bukkit.event import Listener
+from org.bukkit.event import EventHandler
+from org.bukkit.event.player import PlayerInteractEvent
+from org.bukkit.event.block import BlockBreakEvent
+from org.bukkit import Material  # <----- CORRECTED IMPORT: from org.bukkit import Material (no ".Material")
+from org.bukkit.block import Block
+from org.bukkit.entity import Player
+from org.bukkit.inventory import ItemStack
+from org.bukkit.inventory.meta import ItemMeta
+from org.bukkit.ChatColor import ChatColor
 from org.bukkit import Location
-from org.bukkit import Sign
-from org.bukkit import Command # Import Command and CommandSender for command handling
-from org.bukkit import CommandSender
-
-# I'll work on the YAML soon, the reason for the "DELETE" the classes is sometihng something: Since in java Material is directly a class not a file (unlike python) - So i'm assuming this is the same for the rest of them.
-
-#Yaml Config - THIS MAY STILL BREAK, but i just want ot get the imports done correctly.
-
-import ruamel.yaml as yaml
+from org.bukkit.block import Sign
+from org.bukkit.command import Command # Import Command and CommandSender for command handling
+from org.bukkit.command import CommandSender
+from org.bukkit.plugin import RegisteredServiceProvider
 
 CONFIG_FILE = "config.yml"
 SHOP_CHEST_MATERIAL_CONFIG_KEY = "shop_chest_material"
@@ -37,7 +31,7 @@ DEFAULT_SHOP_IDENTIFIER_SIGN_TEXT = "[Shop]"
 class ChestShop(JavaPlugin, Listener):
 
     def onEnable(self):
-        self.load_plugin_config()
+        self.load_plugin_config_pyspigot() # Load config using Pyspigot ConfigManager
         self.getServer().getPluginManager().registerEvents(self, self)
         self.getLogger().info("SimpleChestShop plugin enabled!")
         self.shop_locations = set() # Placeholder: Keep track of shop chest locations (not persistent yet)
@@ -55,36 +49,26 @@ class ChestShop(JavaPlugin, Listener):
         self.save_shop_locations()
         self.getLogger().info("SimpleChestShop plugin disabled!")
 
-    def load_plugin_config(self):
-        config_path = self.getDataFolder().getAbsolutePath() + "/" + CONFIG_FILE
-        try:
-            with open(config_path, 'r') as f:
-                config = yaml.YAML().load(f)
-                if not config:
-                    config = {}
-        except IOError:
-            config = {}
 
-        material_name = config.get(SHOP_CHEST_MATERIAL_CONFIG_KEY, DEFAULT_SHOP_CHEST_MATERIAL.name())
+    # --- New method to load config using Pyspigot Config Manager ---
+    def load_plugin_config_pyspigot(self):
+        """Loads plugin configuration using Pyspigot's ConfigManager."""
+        config = self.config # Access the ConfigManager via self.config
+
+        # Load shop chest material from config, or use default
+        material_name = config.getString(SHOP_CHEST_MATERIAL_CONFIG_KEY, DEFAULT_SHOP_CHEST_MATERIAL.name()) # Use getString with default
         try:
             self.shop_chest_material = Material.valueOf(material_name.upper())
         except ValueError:
             self.shop_chest_material = DEFAULT_SHOP_CHEST_MATERIAL
             self.getLogger().warning("Invalid shop_chest_material in config: '{}'. Using default: '{}'.".format(material_name, DEFAULT_SHOP_CHEST_MATERIAL.name()))
 
-        self.shop_identifier_sign_text = config.get(SHOP_IDENTIFIER_SIGN_TEXT_CONFIG_KEY, DEFAULT_SHOP_IDENTIFIER_SIGN_TEXT)
+        # Load shop identifier sign text from config, or use default
+        self.shop_identifier_sign_text = config.getString(SHOP_IDENTIFIER_SIGN_TEXT_CONFIG_KEY, DEFAULT_SHOP_IDENTIFIER_SIGN_TEXT) # Use getString with default
 
-        self.config = config
-        self.getLogger().info("Configuration loaded from '{}'".format(CONFIG_FILE))
+        self.getLogger().info("Configuration loaded using Pyspigot ConfigManager from '{}'".format(CONFIG_FILE))
         self.getLogger().info("Shop chest material: '{}'".format(self.shop_chest_material.name()))
         self.getLogger().info("Shop identifier sign text: '{}'".format(self.shop_identifier_sign_text))
-
-
-    def save_config(self):
-        config_path = self.getDataFolder().getAbsolutePath() + "/" + CONFIG_FILE
-        with open(config_path, 'w') as f:
-            yaml.YAML().dump(self.config, f)
-        self.getLogger().info("Configuration saved to '{}'".format(CONFIG_FILE))
 
 
     def load_shop_locations(self):
