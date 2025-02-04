@@ -5,6 +5,7 @@ import os  # Standard library imports FIRST
 from net.milkbowl.vault2.economy import Economy  # CORRECT Vault import (note 'vault2')
 from com.palmergames.bukkit.towny import TownyUniverse # Towny API
 
+from org.bukkit import Bukkit
 from org.bukkit.plugin.java import JavaPlugin
 from org.bukkit.event import Listener
 from org.bukkit.event import EventHandler
@@ -15,7 +16,7 @@ from org.bukkit.block import Block
 from org.bukkit.entity import Player
 from org.bukkit.inventory import ItemStack
 from org.bukkit.inventory.meta import ItemMeta
-from org.bukkit.ChatColor import ChatColor
+from org.bukkit import ChatColor  # CORRECT IMPORT (likely) - Remove ".ChatColor"
 from org.bukkit import Location
 from org.bukkit.block import Sign
 from org.bukkit.command import Command # Import Command and CommandSender for command handling
